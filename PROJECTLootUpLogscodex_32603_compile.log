@@ -1,0 +1,21 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.3/staging' branch; Version is '6000.3.17f1 (cf0352b38e81) revision 13566802'; Using compiler version '194234433'; Build Type 'Release'
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-USER" at "2026-07-25T09:22:44.7475565Z"
+OS: 'Windows 11  (10.0.26200) Professional' Language: 'ko' Physical Memory: 32471 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-07-25T09:22:44Z
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 5768, path: "C:/Program Files/Unity/Hub/Editor/6000.3.17f1/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+
+COMMAND LINE ARGUMENTS:
+Unity.exe
+-batchmode
+-quit
+-projectPath
+C:PROJECTLootUp
+-logFile
+C:PROJECTLootUpLogscodex_32603_compile.log
+Couldn't set project path to: C:/PROJECT/LootUp/C:PROJECTLootUp
+Exiting without the bug reporter. Application will terminate with return code 1
