@@ -481,13 +481,13 @@ BackND SDK를 서비스 경계 뒤에 연결하고 계정별 인증과 LANK를 �
 •	`IAuthenticationService`에 Custom 회원가입, 수동 로그인, 로그아웃 계약 구현
 •	`AuthenticationManager`에 `SignedOut`, `Authenticating`, `Authenticated`, `Failed` 상태와 변경 이벤트 구현
 •	Title에서 Lobby를 사전 로드하되 앱 시작마다 로그인 UI를 표시하고 자동 로그인하지 않음
-•	Title 로그인 UI에 Account ID, Nickname, Password, `CHECK NAME`, `SIGN UP`, `LOGIN` 구성
-•	`REMEMBER ID / PW` 선택 시 입력값만 복원하고 사용자가 직접 로그인
+•	Title 로그인 UI는 Account ID/Password만 요구하고, 신규 가입은 Account ID/Password 1단계와 Nickname 확인 2단계로 분리
+•	`REMEMBER ID / PW` 선택 시 ID와 마스킹된 Password 입력값만 복원하고 사용자가 직접 로그인
 •	로그인 성공 시 `gamerInDate`별 캐릭터 진행·수집/강화 저장소와 LANK 서비스를 구성
 •	로그인 성공 시 `gamerInDate`별 사용자 프로필을 구성하고 `LootUpBest`의 계정 누적 최고 기록과 동기화
 •	Private `LootUpRank` 테이블과 `LootUp Global Rank` 유저 리더보드 연동
 •	Private `LootUpBest` 누적 최고 기록과 기간용 `LootUpRank`를 분리
-•	Private `LootUpPlayerProfile`, `LootUpCurrencyLedger` 기반 재화 원장 클라이언트 구현 완료, 콘솔 테이블 생성 및 실제 계정 검증 필요
+•	Private `LootUpPlayerProfile`, `LootUpCurrencyLedger` 생성 및 실제 계정의 최초 이관, Pending 재전송, 중복 요청 방지 검증 완료
 •	게임 종료 기록 제출, MY LANK, 전역 상위 5개 기록 조회 및 오류/재시도 구현
 •	리더보드 초기화 후 MY LANK가 없으면 이전 테이블 기록 비교를 건너뛰고 첫 플레이 기록을 다시 등록
 •	현재 초기화 주기에 등록된 이후에는 도달 층수, 스코어, 캐릭터 레벨 순으로 최고 기록 유지
@@ -507,29 +507,30 @@ PART 18
 1.	Loading 진입 및 로딩바 미표시 확인
 2.	Title 진입 및 로딩 진행률 확인
 3.	Title 로그인 UI가 표시되는지 확인
-4.	저장된 ID/PW는 입력값만 복원되고 자동 로그인하지 않는지 확인
-5.	인증 성공 후 하단 점멸 `TOUCH` 입력으로 Lobby 진입
-6.	Lobby 배경 및 캐릭터 UI 확인
-7.	캐릭터 선택
-8.	모드 선택
-9.	InGame 시작
-10.	좌우 이동
-11.	아이템 여러 번 통과
-12.	아이템 획득
-13.	적 충돌
-14.	리스폰
-15.	10층 이상 진행
-16.	페이지 전환
-17.	스킬 효과
-18.	수집 아이템 저장
-19.	Game Over
-20.	결과창 표시
-21.	광고보기 선택 시 보상형 광고 시청 후 부활
-22.	확인 선택 시 최고 층과 점수 저장
-23.	Lobby 복귀
-24.	저장 데이터 확인
-25.	`LootUpRank` 게임 종료 기록 제출 확인
-26.	LANK의 MY LANK와 전역 순위 및 계정별 데이터 분리 확인
+4.	신규 가입에서 Account ID/Password 입력 후 Nickname 설정 단계로 전환되는지 확인
+5.	저장된 ID/PW는 ID 평문과 Password 마스킹 상태로 복원되고 자동 로그인하지 않는지 확인
+6.	인증 성공 후 하단 점멸 `TOUCH` 입력으로 Lobby 진입
+7.	Lobby 배경 및 캐릭터 UI 확인
+8.	캐릭터 선택
+9.	모드 선택
+10.	InGame 시작
+11.	좌우 이동
+12.	아이템 여러 번 통과
+13.	아이템 획득
+14.	적 충돌
+15.	리스폰
+16.	10층 이상 진행
+17.	페이지 전환
+18.	스킬 효과
+19.	수집 아이템 저장
+20.	Game Over
+21.	결과창 표시
+22.	광고보기 선택 시 보상형 광고 시청 후 부활
+23.	확인 선택 시 최고 층과 점수 저장
+24.	Lobby 복귀
+25.	저장 데이터 확인
+26.	`LootUpRank` 게임 종료 기록 제출 확인
+27.	LANK의 MY LANK와 전역 순위 및 계정별 데이터 분리 확인
 완료 조건
 •	컴파일 에러 없음
 •	Missing Reference 없음

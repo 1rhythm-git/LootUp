@@ -638,8 +638,9 @@ InGame
 •	`Art/Backgrounds/Title.png` 전체 화면 표시
 •	화면 하단에 Lobby 비동기 로딩 진행률과 `TOUCH` 상태 표시
 •	앱 시작 시 BackND를 초기화하고 남아 있는 인증 세션을 로그아웃한 뒤 중앙 로그인 UI 표시
-•	로그인 UI는 Account ID, Nickname, Password 입력과 `CHECK NAME`, `SIGN UP`, `LOGIN` 버튼을 제공
-•	`REMEMBER ID / PW`는 자동 로그인이 아니라 다음 실행에서 입력값만 복원
+•	`ACCOUNT LOGIN`은 Account ID와 Password만 입력받고 Nickname을 요구하지 않음
+•	신규 가입은 `CREATE ACCOUNT - 1/2`에서 Account ID와 Password를 받고, `CREATE ACCOUNT - 2/2`에서 Nickname 확인 및 생성을 진행
+•	`REMEMBER ID / PW`는 자동 로그인이 아니라 다음 실행에서 ID와 마스킹된 Password 입력값만 복원
 •	Lobby 비동기 로딩과 인증 성공이 모두 완료된 뒤 진행 문구를 `TOUCH`로 전환하고 점멸
 •	터치, 마우스 클릭 또는 확인 키 입력 시 준비된 Lobby 씬 활성화
 •	Custom 가입 또는 수동 로그인에 성공하기 전에는 Lobby 진입을 막고 오류 메시지와 재시도 제공
@@ -794,6 +795,7 @@ ________________________________________
 
 20.3 재화 서버 권한 및 원장 정책
 BackND 로그인 계정의 `GameMoney`, `Ruby`는 Private `LootUpPlayerProfile`의 서버 잔액을 권한 원본으로 사용한다.
+Private `LootUpPlayerProfile`과 `LootUpCurrencyLedger`는 스키마 정의 및 활성 상태로 생성했으며 실제 계정 검증을 완료했다.
 서버 프로필이 없는 계정은 기존 계정별 로컬 잔액을 최초 한 번 이전하며 `migrationVersion`으로 완료 상태를 기록한다.
 재화 증감은 `ICurrencyLedgerService`와 `CurrencyLedgerManager`를 통해 요청하고 고유 `requestId`를 사용한다.
 `LootUpPlayerProfile` 잔액 갱신과 `LootUpCurrencyLedger` 원장 추가는 BackND `TransactionWriteV2` 한 요청으로 처리한다.
@@ -947,8 +949,9 @@ ________________________________________
 •	인증 호출은 `IAuthenticationService` 뒤에 두고 게임 및 UI 코드가 BackND SDK를 직접 참조하지 않는다.
 •	`AuthenticationManager`가 Custom 가입, 수동 로그인, 로그아웃과 인증 상태를 관리한다.
 •	Title 시작 시 남아 있는 BackND 세션을 로그아웃하며 저장된 세션으로 자동 Lobby에 진입하지 않는다.
+•	가입은 Account ID/Password 입력과 Nickname 설정의 2단계로 분리하고, 일반 로그인은 Account ID/Password만 요구한다.
 •	회원가입 또는 로그인 성공 후에만 `TOUCH` 상태로 전환해 Lobby 진입을 허용한다.
-•	`REMEMBER ID / PW`를 선택한 경우에만 Account ID와 Password 입력값을 로컬 난독화 저장하고 다음 실행에 복원한다.
+•	`REMEMBER ID / PW`를 선택한 경우에만 Account ID와 Password 입력값을 로컬 난독화 저장하고 다음 실행에 ID 평문과 Password 마스킹 상태로 복원한다.
 •	입력값 기억과 자동 로그인은 분리하며 복원된 입력값이 있어도 사용자가 `LOGIN`을 직접 눌러야 한다.
 •	`CHECK NAME`은 Nickname 형식을 사전 확인하고, 실제 중복 확인과 Nickname 생성은 CustomSignUp 성공 세션에서 처리한다.
 •	성공 세션의 `gamerInDate`와 Nickname을 사용자 식별 및 프로필에 전달한다.

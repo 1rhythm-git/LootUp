@@ -6,22 +6,56 @@ namespace LootUp.Core.Authentication
 {
     public static class LocalLoginCredentialPreferences
     {
-        private const string LegacyRememberCredentialsKey =
-            "LootUp.Login.RememberCredentials.v1";
-        private const string LegacyNicknameKey = "LootUp.Login.Nickname.v1";
-        private const string LegacyPasswordKey = "LootUp.Login.Password.v1";
-        private const string LegacyAutoLoginKey = "LootUp.Login.AutoLogin.v2";
-        private const string LegacyAccountIdKey = "LootUp.Login.AccountId.v2";
-        private const string RememberCredentialsKey =
-            "LootUp.Login.RememberCredentials.v3";
-        private const string AccountIdKey = "LootUp.Login.AccountId.v3";
-        private const string PasswordKey = "LootUp.Login.Password.v3";
+        private const string LoginFlowMigrationKey =
+            "LootUp.Login.FlowMigration.v4";
+        private const string RememberAccountKey =
+            "LootUp.Login.RememberAccount.v4";
+        private const string AccountIdKey = "LootUp.Login.AccountId.v4";
+        private const string PasswordKey = "LootUp.Login.Password.v4";
+
+        private static readonly string[] LegacyCredentialKeys =
+        {
+            "LootUp.Login.RememberCredentials.v1",
+            "LootUp.Login.Nickname.v1",
+            "LootUp.Login.Password.v1",
+            "LootUp.Login.AutoLogin.v2",
+            "LootUp.Login.AccountId.v2",
+            "LootUp.Login.RememberCredentials.v3",
+            "LootUp.Login.AccountId.v3",
+            "LootUp.Login.Password.v3"
+        };
+
+        private static readonly string[] LegacyLocalAccountKeys =
+        {
+            "LootUp.Authentication.v2",
+            "LootUp.Authentication.v1",
+            "PH.Authentication.v1",
+            "LootUp.GuestAccounts.v1"
+        };
+
+        public static bool ApplyLoginFlowMigration()
+        {
+            if (PlayerPrefs.GetInt(LoginFlowMigrationKey, 0) == 1)
+            {
+                DeleteLegacyCredentials();
+                return false;
+            }
+
+            DeleteLegacyCredentials();
+            DeleteKeys(LegacyLocalAccountKeys);
+            PlayerPrefs.DeleteKey(RememberAccountKey);
+            PlayerPrefs.DeleteKey(AccountIdKey);
+            PlayerPrefs.DeleteKey(PasswordKey);
+            PlayerPrefs.SetInt(LoginFlowMigrationKey, 1);
+            PlayerPrefs.Save();
+            return true;
+        }
 
         public static bool TryLoad(out string accountId, out string password)
         {
             accountId = string.Empty;
             password = string.Empty;
-            if (PlayerPrefs.GetInt(RememberCredentialsKey, 0) != 1)
+            if (PlayerPrefs.GetInt(RememberAccountKey, 0) != 1)
             {
                 return false;
             }
@@ -48,7 +82,7 @@ namespace LootUp.Core.Authentication
         public static void Save(string accountId, string password)
         {
             DeleteLegacyCredentials();
-            PlayerPrefs.SetInt(RememberCredentialsKey, 1);
+            PlayerPrefs.SetInt(RememberAccountKey, 1);
             PlayerPrefs.SetString(
                 AccountIdKey,
                 accountId?.Trim() ?? string.Empty);
@@ -62,7 +96,7 @@ namespace LootUp.Core.Authentication
         public static void Clear()
         {
             DeleteLegacyCredentials();
-            PlayerPrefs.DeleteKey(RememberCredentialsKey);
+            PlayerPrefs.DeleteKey(RememberAccountKey);
             PlayerPrefs.DeleteKey(AccountIdKey);
             PlayerPrefs.DeleteKey(PasswordKey);
             PlayerPrefs.Save();
@@ -70,21 +104,26 @@ namespace LootUp.Core.Authentication
 
         public static void DeleteLegacyCredentials()
         {
-            bool hasLegacyCredentials =
-                PlayerPrefs.HasKey(LegacyRememberCredentialsKey)
-                || PlayerPrefs.HasKey(LegacyNicknameKey)
-                || PlayerPrefs.HasKey(LegacyPasswordKey)
-                || PlayerPrefs.HasKey(LegacyAutoLoginKey)
-                || PlayerPrefs.HasKey(LegacyAccountIdKey);
-            PlayerPrefs.DeleteKey(LegacyRememberCredentialsKey);
-            PlayerPrefs.DeleteKey(LegacyNicknameKey);
-            PlayerPrefs.DeleteKey(LegacyPasswordKey);
-            PlayerPrefs.DeleteKey(LegacyAutoLoginKey);
-            PlayerPrefs.DeleteKey(LegacyAccountIdKey);
-            if (hasLegacyCredentials)
+            if (DeleteKeys(LegacyCredentialKeys))
             {
                 PlayerPrefs.Save();
             }
+        }
+
+        private static bool DeleteKeys(string[] keys)
+        {
+            bool deletedAny = false;
+            for (int i = 0; i < keys.Length; i++)
+            {
+                if (PlayerPrefs.HasKey(keys[i]))
+                {
+                    deletedAny = true;
+                }
+
+                PlayerPrefs.DeleteKey(keys[i]);
+            }
+
+            return deletedAny;
         }
     }
 }

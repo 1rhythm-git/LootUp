@@ -72,8 +72,7 @@ namespace LootUp.Core.Currency
                             ProfileTableName,
                             CreateProfileParam(
                                 localBalances,
-                                "migration:v1",
-                                timestamp)),
+                                "migration:v1")),
                         TransactionValue.SetInsert(
                             LedgerTableName,
                             CreateLedgerParam(
@@ -223,8 +222,7 @@ namespace LootUp.Core.Currency
                             userId,
                             CreateProfileParam(
                                 nextBalances,
-                                request.RequestId,
-                                timestamp)),
+                                request.RequestId)),
                         TransactionValue.SetInsert(
                             LedgerTableName,
                             CreateLedgerParam(
@@ -322,8 +320,7 @@ namespace LootUp.Core.Currency
 
         private static Param CreateProfileParam(
             CurrencyBalanceSnapshot balances,
-            string requestId,
-            string timestamp)
+            string requestId)
         {
             Param param = new Param();
             param.Add("schemaVersion", SchemaVersion);
@@ -331,7 +328,6 @@ namespace LootUp.Core.Currency
             param.Add("gameMoney", balances.GameMoney);
             param.Add("ruby", balances.Ruby);
             param.Add("lastRequestId", requestId ?? string.Empty);
-            param.Add("updatedAt", timestamp ?? string.Empty);
             return param;
         }
 

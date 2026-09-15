@@ -5539,3 +5539,93 @@ ________________________________________
 • 리팩터링이 필요한 시점
 
 문서 갱신은 코드 변경과 별개로 누락되지 않도록 한다.
+
+________________________________________
+
+## 2026-09-01 Codex 데스크톱 프로젝트 연동 점검
+
+완료 내용:
+• `C:\PROJECT\LootUp`을 Codex 데스크톱의 로컬 프로젝트 작업 폴더로 점검했다.
+• 실제 `ProjectSettings/ProjectVersion.txt` 기준으로 `AGENTS.md`의 Unity 버전을 `6000.3.17f1`로 정정했다.
+• 프로젝트별 Codex 설정과 Unity 전용 스킬 3개가 유지된 상태임을 확인했다.
+
+변경된 주요 파일:
+• `AGENTS.md`
+• `Docs/05_WORK_LOG.md`
+
+검증 결과:
+• 현재 브랜치 `migration/desktop-codex`와 기존 작업 상태를 확인했다.
+• `git diff --check`에서 내용 오류는 없었으며 기존 저장소의 LF/CRLF 변환 경고만 확인했다.
+• 줄바꿈 일괄 정규화와 기존 기능 변경은 수행하지 않았다.
+
+남은 이슈:
+• 재시작 최우선 작업은 기존 기록대로 BackND 재화 원장 콘솔 테이블 생성과 실제 계정 검증이다.
+
+________________________________________
+
+## 2026-09-15 로그인 프로세스 및 Title UI 개편
+
+완료 내용:
+• Title 계정 화면을 `ACCOUNT LOGIN`, `CREATE ACCOUNT - 1/2`, `CREATE ACCOUNT - 2/2`의 단계형 흐름으로 분리했다.
+• 신규 가입은 Account ID/비밀번호를 먼저 입력한 뒤 닉네임을 별도로 설정하도록 변경했다.
+• 기존 로그인은 Account ID/비밀번호만 요구하고 닉네임을 인증 입력에서 완전히 제외했다.
+• 앱 재실행 시 남은 BackND 토큰을 로그아웃하고 항상 Account ID/비밀번호 확인 화면을 거치도록 유지했다.
+• `REMEMBER ID / PW` 선택 후 수동 로그인에 성공하면 다음 실행에서 ID와 마스킹된 비밀번호 입력값을 복원하도록 했다.
+• 로그인 흐름 v4 최초 적용 시 구형 저장 ID/PW와 로컬 Guest 계정 목록을 한 번만 정리해 새 계정 생성을 유도했다.
+• 기존 BackND 세션 토큰은 앱 재실행 때마다 로그아웃해 수동 로그인 확인 단계를 우회하지 못하도록 했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/SceneFlow/TitleSceneController.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Authentication/BackndAuthenticationService.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Authentication/LocalLoginCredentialPreferences.cs`
+• `Docs/05_WORK_LOG.md`
+
+검증 결과:
+• Unity 6000.3.17f1 생성 `Assembly-CSharp.rsp`와 BackND SDK 참조 기반 전체 C# 컴파일 성공을 확인했다.
+• 가입 성공 직후에는 기억 정보를 저장하지 않고, 이후 ID/PW 수동 로그인 성공 시에만 선택 상태에 따라 저장함을 정적 확인했다.
+• 사용자 기기에서 가입/로그인, 앱 재접속 시 로그인 확인, ID/PW 기억하기와 비밀번호 마스킹 동작을 수동 검증했다.
+
+남은 확인:
+• 기존 BackND 서버 계정은 클라이언트에서 일괄 삭제하지 않는다. 동일 Account ID 재사용이 필요하면 뒤끝 콘솔에서 대상 계정을 수동 삭제한다.
+• `LootUpPlayerProfile`, `LootUpCurrencyLedger` 콘솔 생성과 실제 계정 검증은 아래 후속 작업에서 완료했다.
+
+________________________________________
+
+## 2026-09-15 BackND 재화 원장 콘솔 설정 및 실계정 검증
+
+완료 내용:
+• BackND 게임 정보에 Private, 스키마 정의, 활성 상태의 `LootUpPlayerProfile`과 `LootUpCurrencyLedger` 테이블을 생성했다.
+• 프로필에는 `schemaVersion`, `migrationVersion`, `gameMoney`, `ruby`, `lastRequestId`를 설정했다.
+• 원장에는 `schemaVersion`, `requestId`, `currencyType`, `deltaAmount`, `balanceAfter`, `reason`, `runId`, `createdAt`을 설정했다.
+• BackND 예약 시스템 컬럼인 `updatedAt`을 사용자 컬럼과 클라이언트 `Param`에서 제거하고 시스템 값을 사용하도록 계약을 수정했다.
+• 실제 계정 최초 로그인에서 프로필 1행과 GameMoney/Ruby migration 원장 2행 생성을 확인했다.
+• 테이블 생성 전 보류된 GameMoney 23 런 보상이 다음 로그인에서 Pending Queue를 통해 원장과 프로필에 반영됨을 확인했다.
+• 재로그인 후 프로필 1행과 기존 원장 3행이 유지되어 최초 이관이 중복되지 않음을 확인했다.
+• 동일 `requestId`로 GameMoney +1 요청을 두 번 보내 첫 요청은 `Applied`, 두 번째는 `Duplicate`이며 최종 잔액 24로 유지됨을 Unity 로그와 서버 원장에서 교차 확인했다.
+• 검증용 Editor 메뉴 스크립트와 `.meta`는 확인 완료 후 제거했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Currency/BackndCurrencyLedgerService.cs`
+• `Docs/00_MASTER_PROJECT_BRIEF.md`
+• `Docs/04_CODEX_EXECUTION_PLAN.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/06_BACKND_INTEGRATION_PLAN.md`
+• `Docs/07_BACKND_DATA_MIGRATION_PLAN.md`
+
+검증 결과:
+• Unity 6000.3.17f1 생성 `Assembly-CSharp.rsp` 기반 전체 Runtime C# 컴파일 성공을 확인했다.
+• `LootUpPlayerProfile` 1행의 `schemaVersion=1`, `migrationVersion=1`, `gameMoney=24`, `ruby=0`을 확인했다.
+• `LootUpCurrencyLedger`에 migration 2행, Pending 런 보상 1행, 멱등성 검증 1행만 존재함을 확인했다.
+• `git diff --check` 기준 내용 오류가 없음을 확인했다.
+• 로그인 2단계 UI, 재접속 수동 확인, ID/PW 복원 정책과 재화 원장 검증 결과를 마스터·실행·BackND 이관 문서에 동기화했다.
+
+관련 작업 기준:
+• `5d8040f` 이후 로그인 프로세스 개편과 BackND 재화 원장 콘솔/실계정 검증 변경을 하나의 후속 커밋으로 정리한다.
+
+남은 확인:
+• 계정 A/B 교차 로그인과 다른 기기에서 서버 잔액 24가 복구되는지 확인한다.
+• Ruby 지급/사용과 잔액 부족 요청을 실제 콘텐츠 연결 시 검증한다.
+• 운영 전 BackND Function에서 허용 금액, 사유, `requestId`를 서버 검증하도록 보강한다.
+
+다음 작업:
+• 캐릭터 성장/보유/선택/장착 정보를 BackND 서버 저장소로 이관한다.

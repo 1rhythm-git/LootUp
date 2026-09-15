@@ -45,10 +45,12 @@ Android AAR의 최소 SDK는 22이며 현재 프로젝트의 최소 SDK 25와 �
 - 로그인 ID: 변경 불가능한 Custom ID, 영문/숫자/밑줄/하이픈 `4~20자`
 - 비밀번호: `6~32자`, 기억하기를 체크한 경우에만 로컬 난독화 저장
 - 표시 닉네임: 한글/영문/숫자/밑줄 `2~12자`
+- 일반 로그인: Account ID와 비밀번호만 입력
+- 신규 가입: Account ID/비밀번호 입력 후 닉네임 설정으로 이어지는 2단계 UI
 - `CHECK NAME`: 가입 전 로컬 형식 확인
 - 실제 닉네임 중복 확인 및 생성: CustomSignUp 성공 후 인증 세션에서 처리
 - 세션 정책: 앱 재실행마다 로그인 화면을 표시하고 로그인 버튼을 직접 눌러야 함
-- 로그인 정보 기억: 사용자가 체크한 경우에만 ID/PW 입력값을 로컬에 복원
+- 로그인 정보 기억: 사용자가 체크한 경우에만 ID와 마스킹된 비밀번호 입력값을 로컬에 복원
 - 기억하기와 자동 로그인은 분리하며, 저장값이 있어도 로그인 버튼을 직접 눌러야 함
 - 뒤끝 토큰: 재실행 자동 로그인에는 사용하지 않고 앱 시작 시 남은 세션을 로그아웃
 - 기존 로컬 Guest 계정: 서버 계정으로 자동 이전하지 않음
@@ -224,7 +226,9 @@ Lobby `BEST`는 리더보드 기간과 무관한 계정 누적 최고 기록이�
 | `gameMoney` | INT | 허용 | 서버 권한 게임머니 잔액 |
 | `ruby` | INT | 허용 | 서버 권한 Ruby 잔액 |
 | `lastRequestId` | STRING | 허용 | 마지막 반영 요청 추적 |
-| `updatedAt` | STRING | 허용 | UTC ISO-8601 갱신 시각 |
+
+갱신 시각은 BackND가 자동으로 제공하는 시스템 `updatedAt` 컬럼을 사용하며,
+동일 이름의 사용자 컬럼은 생성하거나 클라이언트 `Param`에 포함하지 않는다.
 
 `LootUpCurrencyLedger`:
 
@@ -256,7 +260,7 @@ Lobby `BEST`는 리더보드 기간과 무관한 계정 누적 최고 기록이�
 | 수동 | 뒤끝 프로젝트 및 앱 등록 | 사용자 | 뒤끝 콘솔 접근 |
 | 수동 | Client App ID, Signature Key 설정 | 사용자 | 앱 등록 완료 |
 | 수동 | `LootUpRank`, `LootUpBest` 테이블과 유저 랭킹 생성 | 사용자 | 정렬 정책 확정 |
-| 수동 | `LootUpPlayerProfile`, `LootUpCurrencyLedger` Private 테이블 생성 | 사용자 | 재화 원장 클라이언트 구현 완료 |
+| 완료 | `LootUpPlayerProfile`, `LootUpCurrencyLedger` Private 테이블 생성 | 사용자/Codex | 실제 계정 검증 완료 |
 | 수동 | 랭킹 상한과 초기화 주기 확정 | 사용자 | 게임 운영 정책 |
 | 수동 | Google Play/OAuth/GPGS 설정 | 사용자 | Google 로그인 진행 시 |
 | 자동 | SDK 임포트 및 컴파일 수정 | Codex | 인증 정보 준비 |
@@ -274,7 +278,8 @@ P4~P5 LANK 클라이언트 구현, 기간 랭킹 서버 콘솔 설정과 실제 
 P6 클라이언트 분리 구현을 완료했으며 `LootUpBest` 콘솔 테이블 생성과
 Editor/Android 실기기 검증도 완료했다.
 재화 서버 원장 클라이언트와 최초 이관 로직을 구현했으며
-`LootUpPlayerProfile`, `LootUpCurrencyLedger` 콘솔 생성과 실제 계정 검증이 남아 있다.
+`LootUpPlayerProfile`, `LootUpCurrencyLedger` 콘솔 생성과 실제 계정의 최초 이관,
+재로그인 중복 방지, Pending 재전송, 동일 `requestId` 멱등성 검증을 완료했다.
 
 - Unity Editor에서 `LEADERBOARD NOT FOUND` 오류가 사라지고 LANK 조회 정상 동작 확인
 - 게임 종료 후 `LootUpRank` 행과 `LootUp Global Rank` 반영 확인

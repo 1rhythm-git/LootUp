@@ -53,7 +53,7 @@
 
 ## Tech Stack
 
-- Unity 6.3 LTS (6000.3.0f1)
+- Unity 6.3 LTS (6000.3.17f1)
 - C# scripts under `Assets/Scripts/**`
 - Target platforms: Android, Windows (Editor)
 

@@ -44,7 +44,7 @@ BackND로 옮겨야 하는 정보다.
 
 - `LootUpPlayerProfile` 서버 잔액과 `LootUpCurrencyLedger` 거래 원장 클라이언트 구현 완료
 - 계정별 Pending Queue와 다음 로그인 재전송 구현 완료
-- BackND 콘솔 테이블 생성 및 실제 계정 검증 필요
+- BackND Private 테이블 생성 및 실제 계정의 최초 이관, Pending 재전송, 중복 요청 방지 검증 완료
 
 이관 원칙:
 
@@ -59,7 +59,7 @@ BackND로 옮겨야 하는 정보다.
 
 권장 논리 테이블:
 
-- `LootUpPlayerProfile`: 스키마 버전, GameMoney, Ruby, 갱신 시각
+- `LootUpPlayerProfile`: 스키마 버전, GameMoney, Ruby, BackND 시스템 갱신 시각
 - `LootUpCurrencyLedger`: 거래 ID, 재화 종류, 증감량, 사유, 런 ID, 처리 시각
 
 콘솔 스키마는 `Docs/06_BACKND_INTEGRATION_PLAN.md`의 P7을 기준으로 생성한다.

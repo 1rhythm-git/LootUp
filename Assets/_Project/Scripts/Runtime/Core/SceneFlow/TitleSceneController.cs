@@ -14,6 +14,10 @@ namespace LootUp.Core.SceneFlow
     public sealed class TitleSceneController : MonoBehaviour
     {
         private const string RuntimeRootName = "TitleRuntimeRoot";
+        private const int AccountIdMinimumLength = 4;
+        private const int AccountIdMaximumLength = 20;
+        private const int PasswordMinimumLength = 6;
+        private const int PasswordMaximumLength = 32;
 
         [SerializeField]
         private Sprite backgroundSprite;
@@ -36,7 +40,9 @@ namespace LootUp.Core.SceneFlow
         private Text statusText;
         private RectTransform loginPanelRoot;
         private RectTransform guestLoginRoot;
+        private RectTransform nicknameSetupRoot;
         private RectTransform googleLoginRoot;
+        private Text accountFlowTitleText;
         private Text loginMessageText;
         private InputField accountIdInput;
         private InputField nicknameInput;
@@ -47,6 +53,10 @@ namespace LootUp.Core.SceneFlow
         private Button nicknameCheckButton;
         private Button guestRegisterButton;
         private Button guestLoginButton;
+        private Button registrationNextButton;
+        private Button showRegistrationButton;
+        private Button backToLoginButton;
+        private Button backToRegistrationButton;
         private AsyncOperation lobbyLoadOperation;
         private bool isReadyForTouch;
         private bool isLoginPanelVisible;
@@ -54,6 +64,8 @@ namespace LootUp.Core.SceneFlow
         private bool sceneActivationRequested;
         private float blinkElapsed;
         private string verifiedNickname = string.Empty;
+        private string pendingRegistrationAccountId = string.Empty;
+        private string pendingRegistrationPassword = string.Empty;
 
         private IEnumerator Start()
         {
@@ -150,7 +162,83 @@ namespace LootUp.Core.SceneFlow
                 return;
             }
 
-            ShowGuestLoginView("SELECT LOGIN METHOD");
+            ShowAccountLoginView("ENTER ID AND PASSWORD");
+        }
+
+        private void OnShowRegistrationButtonPressed()
+        {
+            if (isAuthenticationOperationActive)
+            {
+                return;
+            }
+
+            pendingRegistrationAccountId = string.Empty;
+            pendingRegistrationPassword = string.Empty;
+            verifiedNickname = string.Empty;
+            if (accountIdInput != null)
+            {
+                accountIdInput.text = string.Empty;
+            }
+
+            if (passwordInput != null)
+            {
+                passwordInput.text = string.Empty;
+            }
+
+            ShowRegistrationCredentialsView("CREATE A LOGIN ID");
+        }
+
+        private void OnBackToLoginButtonPressed()
+        {
+            if (isAuthenticationOperationActive)
+            {
+                return;
+            }
+
+            pendingRegistrationAccountId = string.Empty;
+            pendingRegistrationPassword = string.Empty;
+            verifiedNickname = string.Empty;
+            RestoreCredentialPreference();
+            ShowAccountLoginView("ENTER ID AND PASSWORD");
+        }
+
+        private void OnRegistrationNextButtonPressed()
+        {
+            if (isAuthenticationOperationActive
+                || !TryGetNewAccountCredentials(
+                    out pendingRegistrationAccountId,
+                    out pendingRegistrationPassword))
+            {
+                return;
+            }
+
+            verifiedNickname = string.Empty;
+            if (nicknameInput != null)
+            {
+                nicknameInput.text = string.Empty;
+            }
+
+            ShowNicknameSetupView("CHOOSE YOUR NICKNAME");
+        }
+
+        private void OnBackToRegistrationButtonPressed()
+        {
+            if (isAuthenticationOperationActive)
+            {
+                return;
+            }
+
+            if (accountIdInput != null)
+            {
+                accountIdInput.text = pendingRegistrationAccountId;
+            }
+
+            if (passwordInput != null)
+            {
+                passwordInput.text = pendingRegistrationPassword;
+            }
+
+            ShowRegistrationCredentialsView("CHECK YOUR LOGIN ID");
         }
 
         private void OnNicknameChanged(string nickname)
@@ -196,10 +284,7 @@ namespace LootUp.Core.SceneFlow
         private void OnGuestRegisterButtonPressed()
         {
             if (isAuthenticationOperationActive
-                || !TryGetRegistrationCredentials(
-                    out string accountId,
-                    out string password,
-                    out string nickname))
+                || !TryGetRegistrationNickname(out string nickname))
             {
                 return;
             }
@@ -216,10 +301,11 @@ namespace LootUp.Core.SceneFlow
             StartCoroutine(
                 RunAuthenticationOperation(
                     AuthenticationManager.RegisterAsync(
-                        accountId,
-                        password,
+                        pendingRegistrationAccountId,
+                        pendingRegistrationPassword,
                         nickname),
-                    "CREATING ACCOUNT"));
+                    "CREATING ACCOUNT",
+                    true));
         }
 
         private void OnGuestLoginButtonPressed()
@@ -277,7 +363,8 @@ namespace LootUp.Core.SceneFlow
 
         private IEnumerator RunAuthenticationOperation(
             Task<AuthenticationResult> authenticationTask,
-            string progressMessage)
+            string progressMessage,
+            bool returnToNicknameSetupOnFailure = false)
         {
             isAuthenticationOperationActive = true;
             isReadyForTouch = false;
@@ -292,7 +379,9 @@ namespace LootUp.Core.SceneFlow
             }
 
             isAuthenticationOperationActive = false;
-            ApplyLoginAuthenticationResult(authenticationTask.Result);
+            ApplyLoginAuthenticationResult(
+                authenticationTask.Result,
+                returnToNicknameSetupOnFailure);
         }
 
         private void ApplyInitialAuthenticationResult(
@@ -304,19 +393,27 @@ namespace LootUp.Core.SceneFlow
                 return;
             }
 
-            string message =
-                result.Failure == AuthenticationFailure.NoSavedSession
-                    ? "SELECT LOGIN METHOD"
-                    : GetAuthenticationFailureMessage(result);
+            string message = result.Failure == AuthenticationFailure.NoSavedSession
+                ? "LOGIN OR CREATE ACCOUNT"
+                : GetAuthenticationFailureMessage(result);
             ShowLoginPanel(message);
         }
 
         private void ApplyLoginAuthenticationResult(
-            AuthenticationResult result)
+            AuthenticationResult result,
+            bool returnToNicknameSetupOnFailure)
         {
             if (result.Succeeded)
             {
-                SaveCredentialPreference();
+                if (returnToNicknameSetupOnFailure)
+                {
+                    LocalLoginCredentialPreferences.Clear();
+                }
+                else
+                {
+                    SaveCredentialPreference();
+                }
+
                 if (passwordInput != null)
                 {
                     passwordInput.text = string.Empty;
@@ -326,22 +423,37 @@ namespace LootUp.Core.SceneFlow
                 return;
             }
 
-            ShowLoginPanel(GetAuthenticationFailureMessage(result));
+            string message = GetAuthenticationFailureMessage(result);
+            if (returnToNicknameSetupOnFailure)
+            {
+                isLoginPanelVisible = true;
+                if (loginPanelRoot != null)
+                {
+                    loginPanelRoot.gameObject.SetActive(true);
+                }
+
+                ShowNicknameSetupView(message);
+                SetLoginControlsInteractable(true);
+                return;
+            }
+
+            ShowLoginPanel(message);
         }
 
-        private bool TryGetRegistrationCredentials(
-            out string accountId,
-            out string password,
-            out string nickname)
+        private bool TryGetRegistrationNickname(out string nickname)
         {
-            accountId = GetAccountId();
-            password = passwordInput != null ? passwordInput.text : string.Empty;
             nickname = GetNickname();
-            if (string.IsNullOrWhiteSpace(accountId)
-                || string.IsNullOrEmpty(password)
-                || string.IsNullOrWhiteSpace(nickname))
+            if (string.IsNullOrWhiteSpace(pendingRegistrationAccountId)
+                || string.IsNullOrEmpty(pendingRegistrationPassword))
             {
-                SetLoginMessage("ENTER ID, PASSWORD, AND NICKNAME");
+                SetLoginMessage("ENTER ID AND PASSWORD FIRST");
+                ShowRegistrationCredentialsView("ENTER ID AND PASSWORD FIRST");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(nickname))
+            {
+                SetLoginMessage("ENTER A NICKNAME");
                 return false;
             }
 
@@ -358,6 +470,49 @@ namespace LootUp.Core.SceneFlow
                 || string.IsNullOrEmpty(password))
             {
                 SetLoginMessage("ENTER ID AND PASSWORD");
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryGetNewAccountCredentials(
+            out string accountId,
+            out string password)
+        {
+            if (!TryGetLoginCredentials(out accountId, out password))
+            {
+                return false;
+            }
+
+            if (accountId.Length < AccountIdMinimumLength
+                || accountId.Length > AccountIdMaximumLength)
+            {
+                SetLoginMessage(
+                    $"ID MUST BE {AccountIdMinimumLength}-{AccountIdMaximumLength} CHARACTERS");
+                return false;
+            }
+
+            for (int i = 0; i < accountId.Length; i++)
+            {
+                char character = accountId[i];
+                bool isAllowed = character >= 'a' && character <= 'z'
+                    || character >= 'A' && character <= 'Z'
+                    || character >= '0' && character <= '9'
+                    || character == '_'
+                    || character == '-';
+                if (!isAllowed)
+                {
+                    SetLoginMessage("ID USES LETTERS, NUMBERS, _ OR -");
+                    return false;
+                }
+            }
+
+            if (password.Length < PasswordMinimumLength
+                || password.Length > PasswordMaximumLength)
+            {
+                SetLoginMessage(
+                    $"PASSWORD MUST BE {PasswordMinimumLength}-{PasswordMaximumLength} CHARACTERS");
                 return false;
             }
 
@@ -383,8 +538,12 @@ namespace LootUp.Core.SceneFlow
             if (rememberCredentialsToggle != null
                 && rememberCredentialsToggle.isOn)
             {
+                string accountId = !string.IsNullOrWhiteSpace(
+                    pendingRegistrationAccountId)
+                    ? pendingRegistrationAccountId
+                    : GetAccountId();
                 LocalLoginCredentialPreferences.Save(
-                    GetAccountId(),
+                    accountId,
                     passwordInput != null ? passwordInput.text : string.Empty);
                 return;
             }
@@ -394,7 +553,6 @@ namespace LootUp.Core.SceneFlow
 
         private void RestoreCredentialPreference()
         {
-            LocalLoginCredentialPreferences.DeleteLegacyCredentials();
             bool hasCredentials =
                 LocalLoginCredentialPreferences.TryLoad(
                     out string accountId,
@@ -437,7 +595,7 @@ namespace LootUp.Core.SceneFlow
                 loginPanelRoot.gameObject.SetActive(true);
             }
 
-            ShowGuestLoginView(message);
+            ShowAccountLoginView(message);
             SetLoginControlsInteractable(true);
             statusText.text = "LOGIN REQUIRED";
             SetStatusTextAlpha(1f);
@@ -445,9 +603,77 @@ namespace LootUp.Core.SceneFlow
 
         private void ShowGuestLoginView(string message)
         {
+            ShowAccountLoginView(message);
+        }
+
+        private void ShowAccountLoginView(string message)
+        {
             if (guestLoginRoot != null)
             {
                 guestLoginRoot.gameObject.SetActive(true);
+            }
+
+            if (nicknameSetupRoot != null)
+            {
+                nicknameSetupRoot.gameObject.SetActive(false);
+            }
+
+            if (googleLoginRoot != null)
+            {
+                googleLoginRoot.gameObject.SetActive(false);
+            }
+
+            if (accountFlowTitleText != null)
+            {
+                accountFlowTitleText.text = "ACCOUNT LOGIN";
+            }
+
+            SetAccountEntryMode(false);
+
+            SetLoginMessage(message);
+            statusText.text = "LOGIN REQUIRED";
+            SetStatusTextAlpha(1f);
+        }
+
+        private void ShowRegistrationCredentialsView(string message)
+        {
+            if (guestLoginRoot != null)
+            {
+                guestLoginRoot.gameObject.SetActive(true);
+            }
+
+            if (nicknameSetupRoot != null)
+            {
+                nicknameSetupRoot.gameObject.SetActive(false);
+            }
+
+            if (googleLoginRoot != null)
+            {
+                googleLoginRoot.gameObject.SetActive(false);
+            }
+
+            if (accountFlowTitleText != null)
+            {
+                accountFlowTitleText.text = "CREATE ACCOUNT - 1/2";
+            }
+
+            SetAccountEntryMode(true);
+
+            SetLoginMessage(message);
+            statusText.text = "LOGIN REQUIRED";
+            SetStatusTextAlpha(1f);
+        }
+
+        private void ShowNicknameSetupView(string message)
+        {
+            if (guestLoginRoot != null)
+            {
+                guestLoginRoot.gameObject.SetActive(false);
+            }
+
+            if (nicknameSetupRoot != null)
+            {
+                nicknameSetupRoot.gameObject.SetActive(true);
             }
 
             if (googleLoginRoot != null)
@@ -456,8 +682,37 @@ namespace LootUp.Core.SceneFlow
             }
 
             SetLoginMessage(message);
-            statusText.text = "LOGIN REQUIRED";
+            statusText.text = "CREATE ACCOUNT";
             SetStatusTextAlpha(1f);
+        }
+
+        private void SetAccountEntryMode(bool registrationMode)
+        {
+            if (rememberCredentialsToggle != null)
+            {
+                rememberCredentialsToggle.gameObject.SetActive(
+                    !registrationMode);
+            }
+
+            if (guestLoginButton != null)
+            {
+                guestLoginButton.gameObject.SetActive(!registrationMode);
+            }
+
+            if (showRegistrationButton != null)
+            {
+                showRegistrationButton.gameObject.SetActive(!registrationMode);
+            }
+
+            if (registrationNextButton != null)
+            {
+                registrationNextButton.gameObject.SetActive(registrationMode);
+            }
+
+            if (backToLoginButton != null)
+            {
+                backToLoginButton.gameObject.SetActive(registrationMode);
+            }
         }
 
         private void ShowGoogleLoginView()
@@ -465,6 +720,11 @@ namespace LootUp.Core.SceneFlow
             if (guestLoginRoot != null)
             {
                 guestLoginRoot.gameObject.SetActive(false);
+            }
+
+            if (nicknameSetupRoot != null)
+            {
+                nicknameSetupRoot.gameObject.SetActive(false);
             }
 
             if (googleLoginRoot != null)
@@ -512,6 +772,26 @@ namespace LootUp.Core.SceneFlow
             if (guestLoginButton != null)
             {
                 guestLoginButton.interactable = interactable;
+            }
+
+            if (registrationNextButton != null)
+            {
+                registrationNextButton.interactable = interactable;
+            }
+
+            if (showRegistrationButton != null)
+            {
+                showRegistrationButton.interactable = interactable;
+            }
+
+            if (backToLoginButton != null)
+            {
+                backToLoginButton.interactable = interactable;
+            }
+
+            if (backToRegistrationButton != null)
+            {
+                backToRegistrationButton.interactable = interactable;
             }
 
             if (nicknameInput != null)
@@ -779,11 +1059,11 @@ namespace LootUp.Core.SceneFlow
                 new Vector2(0.08f, 0.68f),
                 new Vector2(0.92f, 0.76f),
                 OnGoogleSignupButtonPressed);
-            CreateText(
+            accountFlowTitleText = CreateText(
                 guestLoginRoot,
                 "GuestSectionTitle",
-                "ACCOUNT LOGIN / SIGN UP",
-                new Vector2(0.08f, 0.61f),
+                "ACCOUNT LOGIN",
+                new Vector2(0.08f, 0.60f),
                 new Vector2(0.92f, 0.67f),
                 25);
 
@@ -791,56 +1071,108 @@ namespace LootUp.Core.SceneFlow
                 guestLoginRoot,
                 "AccountIdInput",
                 "ACCOUNT ID",
-                new Vector2(0.08f, 0.49f),
-                new Vector2(0.92f, 0.59f),
+                new Vector2(0.08f, 0.46f),
+                new Vector2(0.92f, 0.57f),
                 false,
                 20);
-            nicknameInput = CreateInputField(
-                guestLoginRoot,
-                "NicknameInput",
-                "NICKNAME",
-                new Vector2(0.08f, 0.37f),
-                new Vector2(0.65f, 0.47f),
-                false,
-                12);
-            nicknameInput.onValueChanged.AddListener(OnNicknameChanged);
-            nicknameCheckButton = CreateButton(
-                guestLoginRoot,
-                "NicknameCheckButton",
-                "CHECK NAME",
-                new Vector2(0.68f, 0.37f),
-                new Vector2(0.92f, 0.47f),
-                OnNicknameCheckButtonPressed,
-                22);
             passwordInput = CreateInputField(
                 guestLoginRoot,
                 "PasswordInput",
                 "PASSWORD",
-                new Vector2(0.08f, 0.25f),
-                new Vector2(0.92f, 0.35f),
+                new Vector2(0.08f, 0.33f),
+                new Vector2(0.92f, 0.44f),
                 true,
                 32);
             rememberCredentialsToggle = CreateToggle(
                 guestLoginRoot,
                 "RememberCredentialsToggle",
                 "REMEMBER ID / PW",
-                new Vector2(0.08f, 0.18f),
-                new Vector2(0.92f, 0.245f),
+                new Vector2(0.08f, 0.25f),
+                new Vector2(0.92f, 0.32f),
                 OnRememberCredentialsChanged);
-            guestRegisterButton = CreateButton(
-                guestLoginRoot,
-                "GuestRegisterButton",
-                "SIGN UP",
-                new Vector2(0.08f, 0.04f),
-                new Vector2(0.48f, 0.16f),
-                OnGuestRegisterButtonPressed);
             guestLoginButton = CreateButton(
                 guestLoginRoot,
                 "GuestLoginButton",
                 "LOGIN",
-                new Vector2(0.52f, 0.04f),
-                new Vector2(0.92f, 0.16f),
+                new Vector2(0.08f, 0.13f),
+                new Vector2(0.92f, 0.23f),
                 OnGuestLoginButtonPressed);
+            showRegistrationButton = CreateButton(
+                guestLoginRoot,
+                "ShowRegistrationButton",
+                "CREATE NEW ACCOUNT",
+                new Vector2(0.08f, 0.02f),
+                new Vector2(0.92f, 0.11f),
+                OnShowRegistrationButtonPressed,
+                24);
+            registrationNextButton = CreateButton(
+                guestLoginRoot,
+                "RegistrationNextButton",
+                "NEXT",
+                new Vector2(0.08f, 0.13f),
+                new Vector2(0.92f, 0.23f),
+                OnRegistrationNextButtonPressed);
+            backToLoginButton = CreateButton(
+                guestLoginRoot,
+                "BackToLoginButton",
+                "BACK TO LOGIN",
+                new Vector2(0.08f, 0.02f),
+                new Vector2(0.92f, 0.11f),
+                OnBackToLoginButtonPressed,
+                24);
+
+            nicknameSetupRoot = CreateRectTransform(
+                loginPanelRoot,
+                "NicknameSetupRoot",
+                Vector2.zero,
+                Vector2.one);
+            CreateText(
+                nicknameSetupRoot,
+                "NicknameSetupTitle",
+                "CREATE ACCOUNT - 2/2",
+                new Vector2(0.08f, 0.60f),
+                new Vector2(0.92f, 0.69f),
+                28);
+            CreateText(
+                nicknameSetupRoot,
+                "NicknameSetupDescription",
+                "THIS NAME APPEARS IN GAME AND RANKINGS",
+                new Vector2(0.08f, 0.53f),
+                new Vector2(0.92f, 0.60f),
+                20);
+            nicknameInput = CreateInputField(
+                nicknameSetupRoot,
+                "NicknameInput",
+                "NICKNAME",
+                new Vector2(0.08f, 0.40f),
+                new Vector2(0.65f, 0.51f),
+                false,
+                12);
+            nicknameInput.onValueChanged.AddListener(OnNicknameChanged);
+            nicknameCheckButton = CreateButton(
+                nicknameSetupRoot,
+                "NicknameCheckButton",
+                "CHECK",
+                new Vector2(0.68f, 0.40f),
+                new Vector2(0.92f, 0.51f),
+                OnNicknameCheckButtonPressed,
+                21);
+            guestRegisterButton = CreateButton(
+                nicknameSetupRoot,
+                "GuestRegisterButton",
+                "CREATE ACCOUNT",
+                new Vector2(0.08f, 0.19f),
+                new Vector2(0.92f, 0.31f),
+                OnGuestRegisterButtonPressed,
+                26);
+            backToRegistrationButton = CreateButton(
+                nicknameSetupRoot,
+                "BackToRegistrationButton",
+                "BACK",
+                new Vector2(0.08f, 0.06f),
+                new Vector2(0.92f, 0.16f),
+                OnBackToRegistrationButtonPressed,
+                24);
 
             googleLoginRoot = CreateRectTransform(
                 loginPanelRoot,
@@ -869,8 +1201,10 @@ namespace LootUp.Core.SceneFlow
                 new Vector2(0.88f, 0.30f),
                 OnBackToGuestButtonPressed,
                 26);
+            nicknameSetupRoot.gameObject.SetActive(false);
             googleLoginRoot.gameObject.SetActive(false);
             RestoreCredentialPreference();
+            SetAccountEntryMode(false);
             loginPanelRoot.gameObject.SetActive(false);
         }
 

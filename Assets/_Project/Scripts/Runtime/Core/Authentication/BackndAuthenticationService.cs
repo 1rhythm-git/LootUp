@@ -18,7 +18,7 @@ namespace LootUp.Core.Authentication
 
         public async Task<AuthenticationResult> TryRestoreSessionAsync()
         {
-            LocalLoginCredentialPreferences.DeleteLegacyCredentials();
+            LocalLoginCredentialPreferences.ApplyLoginFlowMigration();
             AuthenticationResult initializationFailure =
                 await EnsureInitializedAsync();
             if (!initializationFailure.Succeeded)
@@ -33,7 +33,7 @@ namespace LootUp.Core.Authentication
 
             return AuthenticationResult.Fail(
                 AuthenticationFailure.NoSavedSession,
-                "Manual login is required.");
+                "Account ID and password confirmation is required.");
         }
 
         public Task<NicknameAvailabilityResult>
