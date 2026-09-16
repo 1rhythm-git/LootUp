@@ -60,14 +60,45 @@ namespace LootUp.Core.Characters
                 return GetSnapshot(definition);
             }
 
-            CharacterProgressionRecord record = GetNormalizedRecord(definition);
-            int level = record.Level;
-            int currentExperience = (int)Math.Min(int.MaxValue, (long)record.CurrentExperience + Mathf.Max(0, amount));
-            NormalizeProgress(definition, ref level, ref currentExperience);
-
-            Service.SetProgress(definition.CharacterId, level, currentExperience, definition.InitiallyOwned);
+            CharacterProgressionSnapshot preview =
+                PreviewExperience(definition, amount);
+            Service.SetProgress(
+                definition.CharacterId,
+                preview.Level,
+                preview.CurrentExperience,
+                definition.InitiallyOwned);
             ProgressChanged?.Invoke(definition.CharacterId);
             return GetSnapshot(definition);
+        }
+
+        public static CharacterProgressionSnapshot PreviewExperience(
+            CharacterDefinition definition,
+            int amount)
+        {
+            if (definition == null
+                || amount <= 0
+                || string.IsNullOrWhiteSpace(definition.CharacterId))
+            {
+                return GetSnapshot(definition);
+            }
+
+            CharacterProgressionRecord record =
+                GetNormalizedRecord(definition);
+            int level = record.Level;
+            int currentExperience = (int)Math.Min(
+                int.MaxValue,
+                (long)record.CurrentExperience + Mathf.Max(0, amount));
+            NormalizeProgress(
+                definition,
+                ref level,
+                ref currentExperience);
+            int requiredExperience =
+                definition.GetRequiredExperienceForLevel(level);
+            return new CharacterProgressionSnapshot(
+                definition.CharacterId,
+                level,
+                currentExperience,
+                requiredExperience);
         }
 
         // 저장 데이터 복원과 디버그 설정에서 공통으로 사용하는 진행도 진입점이다.
@@ -103,13 +134,19 @@ namespace LootUp.Core.Characters
             }
 
             Service.GetOrCreate(definition.CharacterId, definition.InitiallyOwned);
-            Service.SetOwned(definition.CharacterId, isOwned);
-            OwnershipChanged?.Invoke(definition.CharacterId);
+            if (CharacterProgressionManager.TrySetOwnership(
+                definition.CharacterId,
+                isOwned))
+            {
+                OwnershipChanged?.Invoke(definition.CharacterId);
+            }
         }
 
         public static bool TrySelectAndEquip(CharacterDefinition definition)
         {
-            if (!IsOwned(definition) || !Service.SetSelectedAndEquipped(definition.CharacterId))
+            if (!IsOwned(definition)
+                || !CharacterProgressionManager.TrySelectAndEquip(
+                    definition.CharacterId))
             {
                 return false;
             }

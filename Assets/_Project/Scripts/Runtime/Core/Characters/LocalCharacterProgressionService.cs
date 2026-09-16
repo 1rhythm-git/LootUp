@@ -114,6 +114,56 @@ namespace LootUp.Core.Characters
             return TrySave();
         }
 
+        public IReadOnlyList<CharacterProgressionRecord> GetAllRecords()
+        {
+            List<CharacterProgressionRecord> records =
+                new List<CharacterProgressionRecord>(saveData.Characters.Count);
+            for (int i = 0; i < saveData.Characters.Count; i++)
+            {
+                CharacterProgressionData entry = saveData.Characters[i];
+                if (entry != null)
+                {
+                    records.Add(CreateRecord(entry));
+                }
+            }
+
+            return records;
+        }
+
+        public bool ReplaceAll(
+            IReadOnlyList<CharacterProgressionRecord> records,
+            string selectedCharacterId,
+            string equippedCharacterId)
+        {
+            saveData.Characters.Clear();
+            if (records != null)
+            {
+                for (int i = 0; i < records.Count; i++)
+                {
+                    CharacterProgressionRecord record = records[i];
+                    string normalizedId = NormalizeId(record.CharacterId);
+                    if (string.IsNullOrEmpty(normalizedId))
+                    {
+                        continue;
+                    }
+
+                    saveData.Characters.Add(new CharacterProgressionData
+                    {
+                        CharacterId = normalizedId,
+                        Level = record.Level,
+                        CurrentExperience = record.CurrentExperience,
+                        IsOwned = record.IsOwned,
+                        IsEquipped = record.IsEquipped
+                    });
+                }
+            }
+
+            saveData.SelectedCharacterId = NormalizeId(selectedCharacterId);
+            saveData.EquippedCharacterId = NormalizeId(equippedCharacterId);
+            NormalizeSaveData();
+            return TrySave();
+        }
+
         public bool TrySave()
         {
             try

@@ -246,7 +246,26 @@ Lobby `BEST`는 리더보드 기간과 무관한 계정 누적 최고 기록이�
 두 테이블은 운영 리더보드에 연결하지 않는다. 클라이언트 구현은 완료됐지만
 실제 서버 검증은 위 테이블 생성 후 진행한다.
 
-### P8. 선택 작업
+### P8. 캐릭터 성장 서버 이관
+
+- `ICharacterProgressionService`는 Lobby/InGame의 동기식 로컬 캐시 계약으로 유지
+- `ICharacterProgressionSyncService`와 `BackndCharacterProgressionService`로 SDK 호출 격리
+- 로그인 시 서버 데이터가 없으면 네 캐릭터 진행과 Loadout을 최초 1회 이전
+- 서버 데이터가 있으면 서버 값을 원본으로 계정별 로컬 캐시 교체
+- XP 요청 ID는 `run:{runId}:character-xp:{characterId}` 형식 사용
+- 진행 행 갱신과 XP 원장 삽입을 `TransactionWriteV2`로 함께 처리
+- XP, 보유 상태, Loadout 실패 요청을 계정별 Pending Queue로 재처리
+- XP·보유·Loadout은 Pending 저장에 성공한 뒤 로컬 캐시에 반영
+- 보유 상태 변경은 `isOwned` 전용 요청으로 처리해 레벨/XP 원장을 우회하지 않음
+- 로그인 또는 계정 전환 중 이전 계정 응답이 현재 캐시에 반영되지 않도록 구성 버전 검사
+- BackND 캐릭터 초기 동기화 또는 Pending 재처리 실패 시 인증 완료 차단
+
+뒤끝 콘솔에는 `Docs/07_BACKND_DATA_MIGRATION_PLAN.md` 3.2의 스키마대로
+Private `LootUpCharacterProgress`, `LootUpPlayerLoadout`,
+`LootUpCharacterProgressLedger`를 생성한다. 코드 구현과 정적 컴파일은 완료됐고
+실제 계정 검증은 테이블 생성 후 진행한다.
+
+### P9. 선택 작업
 
 - Google Play Games Services 로그인
 - 기존 로컬 계정과 소셜 계정 연결 또는 이전
@@ -269,6 +288,8 @@ Lobby `BEST`는 리더보드 기간과 무관한 계정 누적 최고 기록이�
 | 자동 | 기록 저장, 전역 순위, MY LANK 연결 | Codex | 랭킹 정책 확정 |
 | 자동 | 계정별 누적 BEST와 기간 랭킹 저장 분리 | Codex | `LootUpBest` 테이블 준비 |
 | 자동 | 재화 서버 원장, 최초 이전, Pending Queue 구현 | Codex | BackND SDK 5.18.3 |
+| 자동 | 캐릭터 성장/보유/선택/장착 서버 이관 구현 | Codex | BackND SDK 5.18.3 |
+| 수동 | 캐릭터 진행, Loadout, XP 원장 Private 테이블 생성 | 사용자/Codex | P8 스키마 확정 |
 | 공동 | Editor/Android 실제 계정 검증 | 사용자/Codex | 각 구현 단계 완료 |
 
 ## 5. 완료 상태와 후속 작업
@@ -280,6 +301,10 @@ Editor/Android 실기기 검증도 완료했다.
 재화 서버 원장 클라이언트와 최초 이관 로직을 구현했으며
 `LootUpPlayerProfile`, `LootUpCurrencyLedger` 콘솔 생성과 실제 계정의 최초 이관,
 재로그인 중복 방지, Pending 재전송, 동일 `requestId` 멱등성 검증을 완료했다.
+캐릭터 서버 이관 클라이언트, 최초 이관, 계정별 Pending Queue와 XP 원장을
+구현했다. XP 선반영, 보유 상태의 전체 진행 덮어쓰기, Pending 저장 실패 무시를
+수정하고 초기 동기화 실패 시 로그인 완료를 차단했다. 콘솔 테이블 생성과 실제
+계정 검증은 사용자 요청으로 유보했다.
 
 - Unity Editor에서 `LEADERBOARD NOT FOUND` 오류가 사라지고 LANK 조회 정상 동작 확인
 - 게임 종료 후 `LootUpRank` 행과 `LootUp Global Rank` 반영 확인
@@ -288,8 +313,8 @@ Editor/Android 실기기 검증도 완료했다.
 
 향후 서버 이관 대상과 로컬 유지 정보, 충돌 정책 및 테이블 경계는
 `Docs/07_BACKND_DATA_MIGRATION_PLAN.md`를 기준으로 진행한다. 다음 우선순위는
-재화 원장 실제 서버 검증, 캐릭터 성장, Artifact/Character Coin,
-런 정산 원장 순서다.
+캐릭터 성장 콘솔/실계정 검증, 재화 계정 A/B·타 기기/Ruby 후속 검증,
+Artifact/Character Coin, 런 정산 원장 순서다.
 
 다음 서버 연동 후보는 기간 랭킹 보상/지급 원장, Google 로그인,
 기록 위변조 검증과 운영 장애 대응이다.

@@ -5476,19 +5476,25 @@ ________________________________________
 3. 다음 작업 후보
 
 우선순위 후보:
-1. 재화 원장 BackND 콘솔 설정 및 실제 계정 검증
-2. 캐릭터 성장/보유/선택/장착 서버 이관
-3. Artifact/Character Coin/강화 서버 이관
-4. 런 정산 원장 및 기록 검증
-5. 기간 랭킹 보상 및 지급 원장 설계
-6. BEST 얼굴 크롭 UI 회귀 검증
+1. 유보: 캐릭터 Private 테이블 3개 생성 및 실제 계정 검증
+2. 유보: 재화 계정 A/B·타 기기 복구와 Ruby 지급/사용/잔액 부족 검증
+3. 출시 전: BackND Function 기반 재화/XP 검증과 동시 최초 이관 단일화
+4. Artifact/Character Coin/강화 서버 이관
+5. 런 정산 원장 및 기록 검증
+6. 기간 랭킹 보상 및 지급 원장 설계
 7. PlayerRespawnController 정식 분리
 8. Artifact 상태 평가 순수화
 9. Lobby / TopHUD UI 빌더 공통화
+10. 신규 캐릭터 추가 전 ScriptableObject 카탈로그 통합
+11. BEST 얼굴 크롭 UI 회귀 검증 (이번 순서 제외)
 
 현재 권장 다음 작업:
-• 재화 원장 콘솔 테이블 생성과 실제 계정 검증을 완료한 뒤 캐릭터 성장 이관을 진행한다.
-• 서버 작업과 별도로 BEST 얼굴 크롭 UI 회귀 후 `PlayerRespawnController`를 정식 분리한다.
+• 캐릭터 서버 이관 코드와 데이터 일관성 리팩터링은 완료 상태다.
+• 콘솔 확인이 가능해지면 캐릭터 테이블 생성/실계정 검증을 최우선으로 재개한다.
+• 캐릭터 검증 후 재화 계정 A/B·타 기기 복구와 Ruby 지급/사용 검증을 재개한다.
+• 서버 검증 두 항목이 유보된 동안에는 `PlayerRespawnController` 정식 분리 또는 Artifact 서버 이관 설계를 진행할 수 있다.
+• BEST 얼굴 크롭 UI 회귀는 이번 순서에서 제외하고 별도 요청 시 재개한다.
+• 이후 `PlayerRespawnController`를 정식 분리한다.
 • 이후 Artifact 상태 평가 순수화, Lobby/TopHUD UI 빌더 공통화와 로컬 저장소 추상화를 진행한다.
 • 구조 안정화 후 캐릭터 강화 정책과 실제 CharacterCoin 콘텐츠를 진행한다.
 • 광고 부활은 `PlayerRespawnController`와 결과 정산 책임 분리가 끝난 뒤 연결한다.
@@ -5629,3 +5635,131 @@ ________________________________________
 
 다음 작업:
 • 캐릭터 성장/보유/선택/장착 정보를 BackND 서버 저장소로 이관한다.
+
+________________________________________
+
+## 2026-09-16 모바일 원격 경량 작업 / 캐릭터 이관 사전 명세
+
+완료 내용:
+• 실행 계획에 남아 있던 완료 전 `LootUpBest` 재시작 최우선 문구를 최신 상태로 정리했다.
+• BEST 얼굴 크롭 UI 회귀 검증은 사용자 요청에 따라 이번 순서에서 제외했다.
+• 캐릭터 성장/보유/선택/장착 서버 이관의 Private 테이블 컬럼, 최초 이전, 서버 권한, 실패 복구와 XP 멱등 정책을 확정했다.
+• 기존 동기식 `ICharacterProgressionService`는 로컬 캐시로 유지하고 별도 비동기 서버 동기화 계층을 추가하는 구현 경계를 확정했다.
+• 현재 코드의 인증 구성, 런 XP 지급, 캐릭터 선택과 UI 호출부를 정적 점검해 예상 수정 파일을 기록했다.
+• 남은 재화 계정 A/B·타 기기 복구와 Ruby 검증은 캐릭터 서버 이관 다음 순번으로 이동했다.
+
+변경된 주요 파일:
+• `Docs/04_CODEX_EXECUTION_PLAN.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/07_BACKND_DATA_MIGRATION_PLAN.md`
+
+검증 결과:
+• 현재 로그인 성공 시 `AuthenticationManager`가 계정별 `LocalCharacterProgressionService`를 구성함을 확인했다.
+• Lobby/InGame은 `CharacterProgressionState`의 동기식 조회를 전제로 하므로 서버 호출을 기존 인터페이스에 직접 넣지 않는 것으로 결정했다.
+• `RunResultService`가 XP를 즉시 로컬 지급하며 현재 XP 지급 멱등 키를 사용하지 않는 상태임을 확인했다.
+• 로그인 시점에는 `LobbyController.availableCharacters`에 접근할 수 없어 UI 독립 캐릭터 카탈로그가 필요함을 확인했다.
+
+남은 이슈:
+• BackND 콘솔에 Private `LootUpCharacterProgress`, `LootUpPlayerLoadout`, `LootUpCharacterProgressLedger` 테이블을 생성해야 한다.
+• 비동기 동기화 서비스와 Manager, 카탈로그, 계정별 Pending Queue를 구현해야 한다.
+• 계정 A/B, 재로그인, 타 기기 복구, 같은 RunId XP 재시도와 서버 실패 복구를 Unity/Android에서 검증해야 한다.
+• 클라이언트 GameData API 단계의 동시 요청 한계는 운영 전 BackND Function으로 보강해야 한다.
+
+다음 작업:
+• 캐릭터 서버 이관 코드를 구현하고 Unity 컴파일 후 콘솔 테이블 생성 및 실제 계정 검증을 진행한다.
+• 캐릭터 이관 검증 완료 후 재화 계정 A/B·타 기기 복구와 Ruby 지급/사용/잔액 부족을 확인한다.
+
+________________________________________
+
+## 2026-09-16 BackND 캐릭터 진행 서버 이관 구현
+
+완료 내용:
+• 기존 `ICharacterProgressionService`를 동기식 로컬 캐시로 유지하면서 서버 계약 `ICharacterProgressionSyncService`를 추가했다.
+• `BackndCharacterProgressionService`에 진행 행/Loadout 최초 이전, 서버 원본 복구, XP 멱등 원장과 보유/Loadout 갱신을 구현했다.
+• `CharacterProgressionManager`에 로그인 초기 동기화, 계정 전환 응답 차단, XP·보유·Loadout 직렬 처리를 구현했다.
+• XP, 보유 상태와 Loadout 실패 요청을 계정별 PlayerPrefs Pending Queue에 저장하고 다음 로그인에서 재처리하도록 구현했다.
+• 현재 캐릭터 에셋의 `default`, `alice`, `landy`, `ninja`와 기본 보유 상태를 UI 독립 카탈로그로 구성했다.
+• 런 결과 XP 요청을 `run:{runId}:character-xp:{characterId}` 멱등 키로 전환했다.
+• Lobby와 TopHUD의 디버그 XP 지급도 서버 Manager 경로로 통일했다.
+• 로그인/로그아웃과 Editor 계정 초기화 시 캐릭터 서버 서비스와 정적 선택 상태를 함께 교체하도록 연결했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Characters/BackndCharacterProgressionService.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterProgressionManager.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterProgressionServerModels.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/PendingCharacterProgressionStore.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterProgressionCatalog.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/ICharacterProgressionSyncService.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/ICharacterProgressionService.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/LocalCharacterProgressionService.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterProgressionState.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Authentication/AuthenticationManager.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Authentication/EditorGuestDataResetter.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Game/RunResultService.cs`
+• `Assets/_Project/Scripts/Runtime/Core/UI/LobbyController.cs`
+• `Assets/_Project/Scripts/Runtime/Core/UI/TopHUDController.cs`
+• `Docs/04_CODEX_EXECUTION_PLAN.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/06_BACKND_INTEGRATION_PLAN.md`
+• `Docs/07_BACKND_DATA_MIGRATION_PLAN.md`
+
+검증 결과:
+• Unity 6000.3.17f1 생성 `Assembly-CSharp.rsp`와 BackND SDK 참조 기반 전체 Runtime C# 컴파일을 두 차례 통과했다.
+• Runtime의 XP 직접 지급 호출은 `CharacterProgressionManager` 내부 로컬 적용 지점 한 곳만 남은 것을 확인했다.
+• 신규 스크립트별 `.meta` 파일과 고유 GUID를 추가했다.
+• `git diff --check` 기준 내용 오류가 없음을 확인했다.
+
+남은 확인:
+• BackND 콘솔에 Private `LootUpCharacterProgress`, `LootUpPlayerLoadout`, `LootUpCharacterProgressLedger`를 생성해야 한다.
+• 실제 계정 최초 로그인에서 캐릭터 4행과 Loadout 1행이 생성되는지 확인해야 한다.
+• XP 지급 후 진행 행과 원장 행이 함께 갱신되고 같은 requestId 재시도가 중복 지급되지 않는지 확인해야 한다.
+• 선택 캐릭터 변경, 재로그인, 계정 A/B와 다른 기기 복구, 오프라인 Pending Queue를 확인해야 한다.
+• 새 캐릭터를 추가할 때 `CharacterProgressionCatalog`와 캐릭터 에셋의 ID/기본 보유값을 함께 갱신해야 한다.
+• 운영 전 BackND Function에서 XP 허용량, 캐릭터 ID, requestId를 서버 검증해야 한다.
+
+다음 작업:
+• 캐릭터 진행용 Private 테이블 3개를 생성하고 실제 계정 검증을 진행한다.
+• 검증 완료 후 재화 계정 A/B·타 기기 복구와 Ruby 지급/사용/잔액 부족을 확인한다.
+
+________________________________________
+
+## 2026-09-16 캐릭터 서버 이관 데이터 일관성 리팩터링
+
+완료 내용:
+• XP 계산을 `PreviewExperience`로 분리하고 요청 검증과 Pending 저장 성공 후에만 로컬 XP를 반영하도록 순서를 변경했다.
+• 같은 XP 요청이 이미 Pending 상태면 로컬 XP를 다시 올리지 않도록 중복 선반영을 차단했다.
+• 보유 상태 갱신을 `SetOwnershipAsync` 전용 계약으로 분리해 서버 레벨/XP 전체 덮어쓰기와 XP 원장 우회 경로를 제거했다.
+• 보유와 Loadout도 Pending 저장 성공 후 로컬 상태를 변경하도록 동기식 진입점을 Manager로 통합했다.
+• XP Pending 신규 추가 저장 실패 시 메모리 큐를 롤백하고 보유/Loadout Pending 저장 결과를 호출부까지 전달하도록 수정했다.
+• 캐릭터 동기화 상태를 `NotConfigured`, `LocalOnly`, `Synchronizing`, `Synchronized`, `Failed`로 구분했다.
+• BackND 캐릭터 초기 동기화, 로컬 캐시 저장 또는 Pending 재처리가 실패하면 서버 로그아웃 후 인증 실패로 전환하도록 변경했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterProgressionState.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterProgressionManager.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterProgressionServerModels.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/PendingCharacterProgressionStore.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/ICharacterProgressionSyncService.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/BackndCharacterProgressionService.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Authentication/AuthenticationManager.cs`
+• `Docs/00_MASTER_PROJECT_BRIEF.md`
+• `Docs/04_CODEX_EXECUTION_PLAN.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/06_BACKND_INTEGRATION_PLAN.md`
+• `Docs/07_BACKND_DATA_MIGRATION_PLAN.md`
+
+검증 결과:
+• Unity 6000.3.17f1 생성 `Assembly-CSharp.rsp`와 BackND SDK 참조 기반 전체 Runtime C# 컴파일 성공을 확인했다.
+• 기존 전체 진행 Upsert, Pending 저장 결과 무시와 서버 XP 선반영 호출이 남지 않은 것을 정적 확인했다.
+• 유보 작업과 재개 조건을 실행 계획, BackND 연동 계획과 이관 우선순위에 동기화했다.
+
+유보 및 우선순위:
+• 최우선 유보: 캐릭터 Private 테이블 3개 생성과 실제 계정 검증. 콘솔 확인 가능 시 즉시 재개한다.
+• 2순위 유보: 재화 계정 A/B·타 기기 복구와 Ruby 지급/사용/잔액 부족 검증.
+• 출시 전 필수: BackND Function 기반 재화/XP 요청 검증, 강한 requestId 멱등성과 동시 최초 이관 단일화.
+• 신규 캐릭터 추가 전: `CharacterProgressionCatalog`를 ScriptableObject 단일 원본으로 통합.
+• 캐릭터 실계정 검증 후: Manager와 BackND 저장소의 추가 책임 분리 필요성을 재평가.
+• BEST 얼굴 크롭 UI 회귀는 이번 순서에서 계속 제외한다.
+
+다음 작업:
+• 콘솔 작업을 재개할 수 없으면 `PlayerRespawnController` 정식 분리 또는 Artifact 서버 이관 설계를 진행한다.

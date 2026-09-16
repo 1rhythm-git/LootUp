@@ -108,7 +108,12 @@ namespace LootUp.Core.Game
 
             if (characterDefinition != null && resultData.TotalExperience > 0)
             {
-                CharacterProgressionState.AddExperience(characterDefinition, resultData.TotalExperience);
+                _ = CharacterProgressionManager.AddExperienceAsync(
+                    characterDefinition,
+                    resultData.TotalExperience,
+                    $"run:{runId}:character-xp:{characterDefinition.CharacterId}",
+                    "run_reward",
+                    runId);
             }
 
             return true;

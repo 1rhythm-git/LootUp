@@ -30,8 +30,13 @@ namespace LootUp.Core.Authentication
 
             // (추가) 정적 서비스 캐시도 새 저장 데이터 기준으로 즉시 교체한다.
             UserProfileManager.Configure(new LocalUserProfileService());
-            CharacterProgressionState.Configure(
-                new LocalCharacterProgressionService());
+            LocalCharacterProgressionService characterProgression =
+                new LocalCharacterProgressionService();
+            CharacterProgressionState.Configure(characterProgression);
+            CharacterProgressionManager.Configure(
+                null,
+                characterProgression,
+                string.Empty);
             CharacterSelectionState.Reset();
             ItemCollectionManager.Configure(
                 new LocalCollectionInventoryService());

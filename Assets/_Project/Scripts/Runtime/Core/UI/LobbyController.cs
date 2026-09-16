@@ -155,7 +155,11 @@ namespace LootUp.Core.UI
         [ContextMenu("Debug/Add 100 XP To Selected Character")]
         private void DebugAddSelectedCharacterExperience()
         {
-            CharacterProgressionState.AddExperience(selectedCharacter, 100);
+            _ = CharacterProgressionManager.AddExperienceAsync(
+                selectedCharacter,
+                100,
+                $"debug:{System.Guid.NewGuid():N}:character-xp",
+                "debug_grant");
         }
 
         public void StartGame()

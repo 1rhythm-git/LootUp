@@ -180,9 +180,43 @@ namespace LootUp.Core.Authentication
                 }
 
                 CurrentSession = result.Session;
-                CharacterProgressionState.Configure(
+                LocalCharacterProgressionService characterProgression =
                     new LocalCharacterProgressionService(
-                        result.Session.UserId));
+                        result.Session.UserId);
+                CharacterProgressionState.Configure(characterProgression);
+                CharacterProgressionManager.Configure(
+                    result.Session.Provider == AuthenticationProvider.Backnd
+                        ? new BackndCharacterProgressionService(
+                            result.Session.UserId)
+                        : null,
+                    characterProgression,
+                    result.Session.UserId);
+                CharacterProgressionSynchronizationResult characterSync =
+                    await CharacterProgressionManager.InitializeAsync();
+                if (result.Session.Provider == AuthenticationProvider.Backnd
+                    && !characterSync.Succeeded)
+                {
+                    try
+                    {
+                        await Service.SignOutAsync();
+                    }
+                    catch
+                    {
+                        // 인증 실패 상태 전환을 우선하며 서버 로그아웃 오류는 무시한다.
+                    }
+
+                    CurrentSession = null;
+                    ResetSessionServices();
+                    CharacterProgressionManager.MarkSynchronizationFailed(
+                        characterSync.Message);
+                    SetState(AuthenticationState.Failed);
+                    return AuthenticationResult.Fail(
+                        AuthenticationFailure.Unexpected,
+                        string.IsNullOrWhiteSpace(characterSync.Message)
+                            ? "Character data synchronization failed."
+                            : characterSync.Message);
+                }
+
                 CharacterSelectionState.Reset();
                 UserProfileManager.Configure(
                     new LocalUserProfileService(
@@ -228,6 +262,14 @@ namespace LootUp.Core.Authentication
         {
             LeaderboardManager.Configure(null);
             CurrencyLedgerManager.Configure(null, string.Empty);
+            LocalCharacterProgressionService characterProgression =
+                new LocalCharacterProgressionService();
+            CharacterProgressionState.Configure(characterProgression);
+            CharacterProgressionManager.Configure(
+                null,
+                characterProgression,
+                string.Empty);
+            CharacterSelectionState.Reset();
             ItemCollectionManager.Configure(
                 new LocalCollectionInventoryService());
         }

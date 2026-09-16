@@ -326,7 +326,11 @@ namespace LootUp.Core.UI
         [ContextMenu("Debug/Add 100 Character XP")]
         private void DebugAddCharacterExperience()
         {
-            CharacterProgressionState.AddExperience(activeCharacterDefinition, 100);
+            _ = CharacterProgressionManager.AddExperienceAsync(
+                activeCharacterDefinition,
+                100,
+                $"debug:{Guid.NewGuid():N}:character-xp",
+                "debug_grant");
         }
 
         [ContextMenu("Debug/Add 100 Score")]

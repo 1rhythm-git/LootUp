@@ -802,6 +802,14 @@ Private `LootUpPlayerProfile`과 `LootUpCurrencyLedger`는 스키마 정의 및 
 네트워크 실패 요청은 `LootUp.CurrencyLedger.Pending.v1.{gamerInDate}`에 저장하고 다음 로그인 동기화에서 재전송한다.
 서버에서 확정되지 않은 Pending 재화는 표시 잔액에 선반영하지 않는다.
 클라이언트 GameData 트랜잭션은 재시도 중복 방지와 복구를 제공하지만 금액 위변조 방지와 다중 기기 동시 요청의 강한 멱등성은 보장하지 않으므로 운영 전 BackND Function 검증을 추가한다.
+
+20.4 캐릭터 진행 서버 권한 정책
+BackND 로그인 계정의 캐릭터 레벨, XP, 보유, 선택 및 장착 정보는 `CharacterProgressionManager`를 통해 동기화한다.
+XP와 보유/Loadout 변경은 계정별 Pending Queue 저장에 성공한 뒤 로컬 캐시에 반영한다.
+보유 상태 변경은 레벨과 XP를 덮어쓰지 않고 서버 `isOwned` 필드만 갱신한다.
+BackND 로그인 시 캐릭터 서버 동기화가 실패하면 인증 완료로 전환하지 않으며 로컬 캐시만으로 Lobby에 진입하지 않는다.
+캐릭터 진행 행과 XP 원장의 동시 최초 요청 경쟁은 운영 전 BackND Function으로 보강한다.
+현재 캐릭터 카탈로그는 네 캐릭터 ID를 코드로 제공하며 신규 캐릭터 추가 전 ScriptableObject 단일 원본으로 통합한다.
 ________________________________________
 21. 저장 시점
 다음 시점에 저장한다.

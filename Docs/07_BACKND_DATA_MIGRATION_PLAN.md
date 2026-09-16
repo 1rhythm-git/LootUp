@@ -3,8 +3,8 @@
 ## 1. 문서 목적
 
 현재 로컬 및 BackND에 저장되는 정보를 데이터 수명과 권한 기준으로 분류한다.
-이 문서는 향후 서버 저장 범위를 확장할 때의 기준이며, 현 단계에서는 추가
-서버 테이블이나 동기화 코드를 구현하지 않는다.
+이 문서는 서버 저장 범위를 확장할 때의 구현 기준이다. 재화 서버 이관은
+완료되었고, 다음 구현 대상은 캐릭터 성장/보유/선택/장착 정보다.
 
 분류 원칙:
 
@@ -75,6 +75,17 @@ BackND로 옮겨야 하는 정보다.
 - 캐릭터 ID별 Level, CurrentExperience, IsOwned, IsEquipped
 - SelectedCharacterId, EquippedCharacterId
 
+현재 구현 상태:
+
+- 동기식 로컬 캐시와 비동기 BackND 동기화 계층 분리 완료
+- 로그인 최초 이전, 서버 원본 복구, 계정 전환 응답 차단 구현 완료
+- XP 원장 멱등 처리와 계정별 XP/보유/Loadout Pending Queue 구현 완료
+- 런 보상과 Lobby/TopHUD 디버그 XP 지급을 Manager 경로로 통합 완료
+- XP·보유·Loadout의 Pending 선저장 후 로컬 반영 순서 적용 완료
+- 보유 상태 전용 서버 갱신으로 레벨/XP 덮어쓰기 경로 제거 완료
+- 캐릭터 초기 동기화 실패 시 BackND 인증 완료 차단 적용 완료
+- 콘솔 테이블 생성과 실제 계정 검증은 사용자 요청으로 유보
+
 이관 원칙:
 
 - 레벨, 경험치, 보유 상태는 서버 권한으로 전환한다.
@@ -87,6 +98,76 @@ BackND로 옮겨야 하는 정보다.
 
 - `LootUpCharacterProgress`: 캐릭터 ID, Level, Experience, IsOwned, 갱신 시각
 - `LootUpPlayerLoadout`: SelectedCharacterId, EquippedCharacterId, 갱신 시각
+
+확정 콘솔 스키마:
+
+| 테이블 | 컬럼 | 타입 | 규칙 |
+| --- | --- | --- | --- |
+| `LootUpCharacterProgress` | `schemaVersion` | int | 초기값 1 |
+| `LootUpCharacterProgress` | `migrationVersion` | int | 최초 로컬 이전 완료 시 1 |
+| `LootUpCharacterProgress` | `characterId` | string | 정규화된 캐릭터 ID, 계정 내 캐릭터별 1행 |
+| `LootUpCharacterProgress` | `level` | int | 1~캐릭터 정의의 Max Lv. |
+| `LootUpCharacterProgress` | `currentExperience` | int | 현재 레벨 내부 XP, 0 이상 |
+| `LootUpCharacterProgress` | `isOwned` | bool | 서버 권한 보유 상태 |
+| `LootUpPlayerLoadout` | `schemaVersion` | int | 초기값 1 |
+| `LootUpPlayerLoadout` | `migrationVersion` | int | 최초 로컬 이전 완료 시 1 |
+| `LootUpPlayerLoadout` | `selectedCharacterId` | string | 보유 캐릭터만 허용 |
+| `LootUpPlayerLoadout` | `equippedCharacterId` | string | 보유 캐릭터만 허용, 계정당 1행 |
+| `LootUpCharacterProgressLedger` | `schemaVersion` | int | 초기값 1 |
+| `LootUpCharacterProgressLedger` | `requestId` | string | XP 지급 멱등 키 |
+| `LootUpCharacterProgressLedger` | `characterId` | string | 지급 대상 캐릭터 ID |
+| `LootUpCharacterProgressLedger` | `experienceDelta` | int | 지급 XP, 0보다 커야 함 |
+| `LootUpCharacterProgressLedger` | `levelAfter` | int | 지급 후 레벨 |
+| `LootUpCharacterProgressLedger` | `experienceAfter` | int | 지급 후 현재 레벨 내부 XP |
+| `LootUpCharacterProgressLedger` | `reason` | string | 예: `run_reward` |
+| `LootUpCharacterProgressLedger` | `runId` | string | 런 보상 추적 ID |
+| `LootUpCharacterProgressLedger` | `createdAt` | string | 클라이언트 요청 생성 UTC 시각 |
+
+세 테이블은 Private, 스키마 정의, 활성 상태로 생성한다. `updatedAt`은 BackND
+시스템 컬럼을 사용하고 사용자 컬럼으로 추가하거나 `Param`에 보내지 않는다.
+`LootUpCharacterProgressLedger.requestId` 사전 조회와 진행 행 갱신/원장 추가의
+`TransactionWriteV2` 묶음으로 일반 재시도 중복을 막는다. 다중 기기 동시
+요청의 강한 멱등성은 운영 전 BackND Function으로 보강한다.
+
+동기화 순서:
+
+1. 로그인 성공 직후 계정별 로컬 캐시를 열고 서버 진행 행과 Loadout을 조회한다.
+2. 서버 행이 전혀 없으면 로컬의 정규화된 캐릭터 목록과 Loadout을 최초 1회 등록한다.
+3. 서버 행이 있으면 서버 값을 원본으로 로컬 캐시를 교체하며 로컬 고레벨을 합치지 않는다.
+4. 선택/장착 값이 미보유 또는 미등록 ID면 서버 값을 비우고 최초 보유 캐릭터로 복구한다.
+5. XP 지급은 `run:{runId}:character-xp:{characterId}` 요청 ID로 처리하고 성공 후 캐시를 갱신한다.
+6. 선택/장착 변경은 Pending 저장 성공 후 로컬 캐시에 반영하고 서버 실패 시 다음 로그인에 재전송한다.
+7. 로그아웃과 계정 전환 시 진행 캐시, 선택 상태와 동기화 작업을 모두 초기화한다.
+
+실패 및 복구 정책:
+
+- 서버 조회 실패 시 캐시를 서버 원본으로 오인하지 않고 동기화 실패 상태를 유지한다.
+- 최초 이관 요청 실패 시 서버 성공 확인 전 `migrationVersion`을 완료 처리하지 않는다.
+- XP 서버 미확정 요청은 계정별 Pending Queue에 저장하고 다음 로그인에서 재시도한다.
+- 서버에서 모르는 캐릭터 ID와 범위를 벗어난 레벨/XP는 적용하지 않고 오류로 기록한다.
+- 캐릭터 에셋의 `InitiallyOwned`는 서버 행이 없는 최초 생성에만 사용한다.
+
+정적 코드 점검 결과와 구현 경계:
+
+- `ICharacterProgressionService`는 Lobby/InGame이 즉시 읽는 동기식 계약이므로 로컬 캐시 역할을 유지한다.
+- `CharacterProgressionState` 호출부를 직접 BackND 비동기 API로 바꾸지 않는다.
+- 비동기 서버 작업은 신규 `ICharacterProgressionSyncService`, `BackndCharacterProgressionService`,
+  `CharacterProgressionManager`에서 초기 동기화, XP, 보유, Loadout 변경을 조정한다.
+- `AuthenticationManager`는 현재 로그인 후 로컬 서비스를 즉시 구성하므로 캐릭터 동기화 완료를
+  `Authenticated` 전환 조건에 포함해야 한다.
+- 로그인 시점에는 `LobbyController.availableCharacters`를 사용할 수 없으므로, 최초 이관에 필요한
+  정규 캐릭터 ID와 `InitiallyOwned`를 제공하는 UI 독립 카탈로그가 필요하다.
+- `RunResultService`의 현재 XP 직접 지급은 고유 `runId` 기반 Manager 요청으로 교체해야 한다.
+- `CharacterSelectionState.Reset()`과 로그아웃 서비스 초기화에 서버 동기화 상태 초기화를 포함해야 한다.
+
+예상 수정 대상:
+
+- 유지/보강: `ICharacterProgressionService.cs`, `LocalCharacterProgressionService.cs`,
+  `CharacterProgressionState.cs`, `CharacterProgressionData.cs`
+- 신규: `ICharacterProgressionSyncService.cs`, `BackndCharacterProgressionService.cs`,
+  `CharacterProgressionManager.cs`, 캐릭터 카탈로그 제공 클래스
+- 연결: `AuthenticationManager.cs`, `RunResultService.cs`, `CharacterSelectionState.cs`
+- 회귀 확인: `LobbyController.cs`, `TopHUDController.cs`, `PlayerCharacterRuntime.cs`
 
 ### 3.3 Artifact, Character Coin, 캐릭터 강화
 
@@ -271,13 +352,15 @@ BackND로 옮겨야 하는 정보다.
 
 완료: 서버 데이터 공통 계약과 재화 원장 클라이언트, 최초 이전, Pending Queue를 구현했다.
 
-1. 재화 원장용 BackND 콘솔 테이블을 생성하고 실제 계정에서 검증한다.
-2. 캐릭터 성장, 보유, 선택 및 장착을 이관한다.
-3. Artifact, Character Coin, 강화 및 Pending Event를 이관한다.
-4. 런 결과 정산 원장과 서버 검증을 연결한다.
-5. 광고 제거 및 결제 권리를 영수증 검증 방식으로 전환한다.
-6. 기간 랭킹 보상과 지급 원장을 구현한다.
-7. BackND Function으로 재화 금액 검증과 강한 멱등성을 보강한다.
+1. 유보: 캐릭터 성장/보유/선택/장착 콘솔 테이블 생성과 실제 계정 검증.
+2. 유보: 재화 계정 A/B·타 기기 복구와 Ruby 지급/사용/잔액 부족 검증.
+3. 출시 전: BackND Function으로 재화/XP 허용량, requestId와 동시 최초 이관을 검증한다.
+4. Artifact, Character Coin, 강화 및 Pending Event를 이관한다.
+5. 런 결과 정산 원장과 서버 검증을 연결한다.
+6. 광고 제거 및 결제 권리를 영수증 검증 방식으로 전환한다.
+7. 기간 랭킹 보상과 지급 원장을 구현한다.
+8. 신규 캐릭터 추가 전 코드 카탈로그를 ScriptableObject 단일 원본으로 통합한다.
+9. 캐릭터 실계정 검증 후 Manager/BackND 저장소의 추가 클래스 분리를 재평가한다.
 
 각 단계는 로컬 데이터 백업, 최초 1회 이전 표시, 서버 저장 성공 확인,
 재로그인 복구, 다른 기기 복구, 중복 요청 검증을 완료한 뒤 다음 단계로
