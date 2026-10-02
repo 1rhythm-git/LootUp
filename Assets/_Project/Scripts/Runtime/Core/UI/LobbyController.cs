@@ -1,3 +1,4 @@
+using System.Collections;
 using LootUp.Core.Authentication;
 using LootUp.Core.Characters;
 using LootUp.Core.Characters.Skills;
@@ -5,6 +6,7 @@ using LootUp.Core.Items;
 using LootUp.Core.Profile;
 using LootUp.Core.SceneFlow;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -72,8 +74,13 @@ namespace LootUp.Core.UI
         [SerializeField]
         private Color experienceColor = new Color(0.2f, 0.78f, 0.72f, 1f);
 
+        [SerializeField, Min(0f)]
+        private float startButtonActivationDelay = 0.75f;
+
         private Font lobbyFont;
         private CharacterDefinition selectedCharacter;
+        private Button startButton;
+        private Coroutine startButtonActivationCoroutine;
         private Text profileText;
         private Text currencyText;
         private Text rubyCurrencyText;
@@ -121,6 +128,11 @@ namespace LootUp.Core.UI
             UserProfileManager.ProfileChanged += HandleUserProfileChanged;
             AuthenticationManager.AuthenticationStateChanged += HandleAuthenticationStateChanged;
             ItemCollectionManager.CollectionChanged += HandleCollectionChanged;
+
+            if (startButton != null && startButtonActivationCoroutine == null)
+            {
+                ScheduleStartButtonActivation();
+            }
         }
 
         private void OnDisable()
@@ -129,6 +141,17 @@ namespace LootUp.Core.UI
             UserProfileManager.ProfileChanged -= HandleUserProfileChanged;
             AuthenticationManager.AuthenticationStateChanged -= HandleAuthenticationStateChanged;
             ItemCollectionManager.CollectionChanged -= HandleCollectionChanged;
+
+            if (startButtonActivationCoroutine != null)
+            {
+                StopCoroutine(startButtonActivationCoroutine);
+                startButtonActivationCoroutine = null;
+            }
+
+            if (startButton != null)
+            {
+                startButton.interactable = false;
+            }
         }
 
         private void OnDestroy()
@@ -164,6 +187,11 @@ namespace LootUp.Core.UI
 
         public void StartGame()
         {
+            if (startButton == null || !startButton.interactable)
+            {
+                return;
+            }
+
             EnsureSelectedCharacter();
             CharacterSelectionState.Select(selectedCharacter);
 
@@ -189,6 +217,7 @@ namespace LootUp.Core.UI
             BuildContent();
             BuildFooter();
             RefreshLobbyData();
+            ScheduleStartButtonActivation();
         }
 
         private void BuildHeader()
@@ -223,7 +252,7 @@ namespace LootUp.Core.UI
 
             BuildRecordStrip(root);
             BuildCharacterStage(root);
-            Button startButton = CreateButton(root, "StartButton", "START", new Vector2(0.055f, 0.025f), new Vector2(0.945f, 0.137f), sampleYellow, primaryTextColor, StartGame, true);
+            startButton = CreateButton(root, "StartButton", "START", new Vector2(0.055f, 0.025f), new Vector2(0.945f, 0.137f), sampleYellow, primaryTextColor, StartGame, false);
             RectTransform startRect = startButton.transform as RectTransform;
             Transform labelTransform = startRect != null ? startRect.Find("StartButtonText") : null;
             if (labelTransform is RectTransform labelRect)
@@ -234,6 +263,50 @@ namespace LootUp.Core.UI
             Image playIcon = CreateImage(startRect, "PlayIcon", new Vector2(0.08f, 0.2f), new Vector2(0.23f, 0.8f), Color.white);
             playIcon.sprite = GetPlaySprite();
             playIcon.preserveAspect = true;
+        }
+
+        private void ScheduleStartButtonActivation()
+        {
+            if (startButtonActivationCoroutine != null)
+            {
+                StopCoroutine(startButtonActivationCoroutine);
+            }
+
+            if (startButton == null)
+            {
+                startButtonActivationCoroutine = null;
+                return;
+            }
+
+            startButton.interactable = false;
+            startButtonActivationCoroutine = StartCoroutine(ActivateStartButtonWhenReady());
+        }
+
+        private IEnumerator ActivateStartButtonWhenReady()
+        {
+            float activationTime = Time.unscaledTime + startButtonActivationDelay;
+            while (Time.unscaledTime < activationTime || IsPrimaryPointerPressed())
+            {
+                yield return null;
+            }
+
+            if (startButton != null)
+            {
+                startButton.interactable = true;
+            }
+
+            startButtonActivationCoroutine = null;
+        }
+
+        private static bool IsPrimaryPointerPressed()
+        {
+            if (Touchscreen.current != null
+                && Touchscreen.current.primaryTouch.press.isPressed)
+            {
+                return true;
+            }
+
+            return Mouse.current != null && Mouse.current.leftButton.isPressed;
         }
 
         private void BuildRecordStrip(RectTransform parent)

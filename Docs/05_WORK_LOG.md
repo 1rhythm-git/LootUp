@@ -5793,3 +5793,28 @@ ________________________________________
 다음 작업:
 • 재시작 최우선: 같은 requestId 중복 지급 방지와 선택/Loadout 복구 검증.
 • 캐릭터 검증 완료 후 재화 계정 A/B·타 기기 복구와 Ruby 지급/사용/잔액 부족을 확인한다.
+
+________________________________________
+
+## 2026-10-02 Lobby START 전환 입력 차단
+
+완료 내용:
+• Title의 `TOUCH` 입력이 Lobby의 `START` 버튼으로 이어져 즉시 InGame으로 전환되는 문제를 수정했다.
+• Lobby 생성 직후 `START`를 0.75초 동안 비활성화하고 기존 터치 또는 마우스 버튼이 해제된 뒤 활성화하도록 변경했다.
+• 비활성 상태에서 `StartGame()`이 직접 호출되더라도 씬 전환을 수행하지 않도록 방어 검사를 추가했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/UI/LobbyController.cs`
+• `Docs/05_WORK_LOG.md`
+
+검증 결과:
+• Unity 6000.3.17f1 생성 `Assembly-CSharp.rsp` 기준 전체 Runtime C# 컴파일 성공을 확인했다.
+• 이번 변경과 무관한 기존 `PlayerSpawner.moveSpeedColumnsPerSecond` 미사용 필드 경고만 확인했다.
+• `git diff --check`에서 내용 오류가 없으며 기존 LF/CRLF 변환 안내만 확인했다.
+
+남은 확인:
+• 모바일에서 `TOUCH`를 짧게 누르거나 길게 누른 상태로 Lobby에 진입해 InGame 자동 전환이 발생하지 않는지 확인해야 한다.
+• Lobby가 보인 뒤 `START`가 활성화되고 정상적으로 InGame에 진입하는지 확인해야 한다.
+
+다음 작업:
+• 재시작 최우선: Lobby START 입력 차단 모바일 회귀 검증.
