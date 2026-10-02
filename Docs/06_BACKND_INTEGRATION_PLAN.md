@@ -303,8 +303,8 @@ Editor/Android 실기기 검증도 완료했다.
 재로그인 중복 방지, Pending 재전송, 동일 `requestId` 멱등성 검증을 완료했다.
 캐릭터 서버 이관 클라이언트, 최초 이관, 계정별 Pending Queue와 XP 원장을
 구현했다. XP 선반영, 보유 상태의 전체 진행 덮어쓰기, Pending 저장 실패 무시를
-수정하고 초기 동기화 실패 시 로그인 완료를 차단했다. 콘솔 테이블 생성과 실제
-계정 검증은 사용자 요청으로 유보했다.
+수정하고 초기 동기화 실패 시 로그인 완료를 차단했다. 콘솔 테이블 생성, 실제 계정
+최초 이관, XP 원장 반영과 모바일 레벨/경험치 복구 검증을 완료했다.
 
 - Unity Editor에서 `LEADERBOARD NOT FOUND` 오류가 사라지고 LANK 조회 정상 동작 확인
 - 게임 종료 후 `LootUpRank` 행과 `LootUp Global Rank` 반영 확인
@@ -313,7 +313,8 @@ Editor/Android 실기기 검증도 완료했다.
 
 향후 서버 이관 대상과 로컬 유지 정보, 충돌 정책 및 테이블 경계는
 `Docs/07_BACKND_DATA_MIGRATION_PLAN.md`를 기준으로 진행한다. 다음 우선순위는
-캐릭터 성장 콘솔/실계정 검증, 재화 계정 A/B·타 기기/Ruby 후속 검증,
+캐릭터 동일 `requestId`·Loadout·계정 A/B·Pending 후속 검증, 재화 계정
+A/B·타 기기/Ruby 후속 검증,
 Artifact/Character Coin, 런 정산 원장 순서다.
 
 다음 서버 연동 후보는 기간 랭킹 보상/지급 원장, Google 로그인,
