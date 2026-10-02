@@ -550,7 +550,9 @@ Total Experience = Level Experience + Floor Experience + Bonus Experience
 Total Score 보정으로 획득한 경험치는 결과창에서 `Bonus XP`로 표기한다.
 
 런에서 획득 가능한 재화는 게임머니로 제한한다.
-Ruby는 일반 런 결과로 직접 지급하지 않고 게임머니 교환, 현금 결제, 광고 보상 등 별도 경로로 획득한다.
+Ruby는 일반 런 결과로 직접 지급하지 않는다.
+Ruby의 판매 상품, 획득 경로와 소비처는 아직 확정하지 않으며 현재는 계정별 잔액, 서버 동기화와 거래 원장 기반만 내부적으로 유지한다.
+게임머니 교환, 현금 결제와 광고 보상은 확정안이 아닌 향후 검토 후보이며 기획 확정 전에는 연결하지 않는다.
 
 런 종료 게임머니:
 Total Game Money = Acquired Game Money + floor(Total Score × bonusGameMoneyMultiplier)
@@ -802,6 +804,8 @@ Private `LootUpPlayerProfile`과 `LootUpCurrencyLedger`는 스키마 정의 및 
 네트워크 실패 요청은 `LootUp.CurrencyLedger.Pending.v1.{gamerInDate}`에 저장하고 다음 로그인 동기화에서 재전송한다.
 서버에서 확정되지 않은 Pending 재화는 표시 잔액에 선반영하지 않는다.
 클라이언트 GameData 트랜잭션은 재시도 중복 방지와 복구를 제공하지만 금액 위변조 방지와 다중 기기 동시 요청의 강한 멱등성은 보장하지 않으므로 운영 전 BackND Function 검증을 추가한다.
+Ruby의 지급·차감 API와 잔액 부족 방어는 내부 기반으로만 보존한다.
+Ruby 상품, 결제, 실제 소비 기능과 정식 사용자 노출 여부는 획득 경로와 용도가 확정된 뒤 별도 기획으로 연결한다.
 
 20.4 캐릭터 진행 서버 권한 정책
 BackND 로그인 계정의 캐릭터 레벨, XP, 보유, 선택 및 장착 정보는 `CharacterProgressionManager`를 통해 동기화한다.
@@ -810,6 +814,15 @@ XP와 보유/Loadout 변경은 계정별 Pending Queue 저장에 성공한 뒤 �
 BackND 로그인 시 캐릭터 서버 동기화가 실패하면 인증 완료로 전환하지 않으며 로컬 캐시만으로 Lobby에 진입하지 않는다.
 캐릭터 진행 행과 XP 원장의 동시 최초 요청 경쟁은 운영 전 BackND Function으로 보강한다.
 현재 캐릭터 카탈로그는 네 캐릭터 ID를 코드로 제공하며 신규 캐릭터 추가 전 ScriptableObject 단일 원본으로 통합한다.
+________________________________________
+20.5 앱 버전 및 서버 데이터 계약 정책
+Android 앱 버전은 Unity `bundleVersion`과 `AndroidBundleVersionCode`를 함께 증가시킨다.
+클라이언트는 BackND 콘솔의 Google Play 최신 버전 및 업데이트 유형을 Title에서 조회한다.
+현재 버전이 더 낮고 강제 업데이트로 등록된 경우 인증과 모든 사용자 데이터 초기화를 시작하지 않는다.
+버전 확인 자체가 실패해도 서버 접근을 허용하지 않는 fail-closed 정책을 사용한다.
+Unity Editor와 Android 이외 플랫폼은 개발 흐름 유지를 위해 현재 클라이언트 검사를 우회한다.
+이미 배포된 구버전 APK에는 이 검사 코드가 없으므로 클라이언트 버전 게이트만으로 기존 직접 GameData 호출을 차단할 수 없다.
+운영 전 BackND Function에 `clientVersion`과 `dataContractVersion` 검증을 추가하고, 스키마 파괴 변경 시 신규 테이블 또는 신규 Function 경로로 전환한 뒤 구버전 쓰기 경로를 폐쇄한다.
 ________________________________________
 21. 저장 시점
 다음 시점에 저장한다.
@@ -956,6 +969,8 @@ ________________________________________
 인증 기반 현행 규칙:
 •	인증 호출은 `IAuthenticationService` 뒤에 두고 게임 및 UI 코드가 BackND SDK를 직접 참조하지 않는다.
 •	`AuthenticationManager`가 Custom 가입, 수동 로그인, 로그아웃과 인증 상태를 관리한다.
+•	Android는 Title에서 BackND 최신 버전 정책을 통과한 뒤에만 인증, 사용자 데이터 동기화와 Lobby 사전 로드를 시작한다.
+•	강제 업데이트 대상 또는 버전 확인 실패 상태에서는 로그인과 서버 데이터 접근을 차단하고 `UPDATE` 또는 `RETRY`만 제공한다.
 •	Title 시작 시 남아 있는 BackND 세션을 로그아웃하며 저장된 세션으로 자동 Lobby에 진입하지 않는다.
 •	가입은 Account ID/Password 입력과 Nickname 설정의 2단계로 분리하고, 일반 로그인은 Account ID/Password만 요구한다.
 •	회원가입 또는 로그인 성공 후에만 `TOUCH` 상태로 전환해 Lobby 진입을 허용한다.

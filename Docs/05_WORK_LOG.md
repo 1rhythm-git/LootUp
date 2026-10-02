@@ -5813,8 +5813,191 @@ ________________________________________
 • `git diff --check`에서 내용 오류가 없으며 기존 LF/CRLF 변환 안내만 확인했다.
 
 남은 확인:
-• 모바일에서 `TOUCH`를 짧게 누르거나 길게 누른 상태로 Lobby에 진입해 InGame 자동 전환이 발생하지 않는지 확인해야 한다.
-• Lobby가 보인 뒤 `START`가 활성화되고 정상적으로 InGame에 진입하는지 확인해야 한다.
+• 없음. 모바일에서 Lobby 자동 진입 방지와 이후 정상 START 동작을 사용자가 확인했다.
 
 다음 작업:
-• 재시작 최우선: Lobby START 입력 차단 모바일 회귀 검증.
+• 인게임 RISING 특수 수집 및 상승 시스템을 구현한다.
+
+________________________________________
+
+## 2026-10-02 인게임 RISING 수집 및 상승 시스템 구현
+
+완료 내용:
+• `R`, `I`, `S`, `N`, `G` 가중치 무작위 추첨과 여섯 슬롯 수집 상태 및 고유 색상을 추가했다.
+• 2층부터 기본 12%, 실패 층당 3%p 증가, 최대 45%, 8번째 판정 확정 스폰 정책을 적용했다.
+• 현재 층의 활성 엘리베이터 반대편이자 플레이어가 지나온 비활성 엘리베이터에 추첨된 문자가 팝업되도록 구현했다.
+• 이미 필요한 수량을 채운 알파벳도 낮은 가중치로 중복 등장할 수 있도록 변경했다.
+• 중복 획득 시 이번 RISING 사이클의 등장 확률 `+5%p`, 해당 알파벳 추첨 가중치 `50% 감소`, 시간 `+3초`, 피버 `+10` 보상을 적용했다.
+• 숫자열/넘버패드 `4` 입력으로 월드 배치 없이 실사용 가중치 추첨과 동일한 문자 획득을 실행하는 테스트 치트를 추가했다.
+• TopHUD에 미수집 회색/수집 고유색 상태를 표시하는 RISING 여섯 칸을 추가했다.
+• 완성 시 입력, 타이머, 엘리베이터와 일반 아이템 스폰을 잠시 정지하고 다음 10층 스테이지 첫 층까지 빠르게 이동하도록 구현했다.
+• 마지막 문자 획득 즉시 타이머 전환 잠금을 걸고 최소 잔여 시간을 보존해, 이동 중 Time Over가 발생하지 않도록 보완했다.
+• RISING 픽업 판정을 HUD 타이머보다 먼저 실행하고 목적 층 배치 완료 후에만 타이머를 재개하도록 처리 순서를 고정했다.
+• RISING으로 페이지를 건너뛸 때 이전 엘리베이터의 수직 케이블 선이 남는 문제를 수정하고 시작·도착 시 이동 가이드 선을 정리하도록 연결했다.
+• 발동 중 세로 속도선과 `RISING +N FLOORS` 오버레이를 표시하고 완료 후 목적 층의 도착측 엘리베이터에 캐릭터를 배치한다.
+• 목적 층을 `InfiniteFloorManager.SetCurrentFloor()`로 갱신해 기존 결과의 Highest Floor, Floor Bonus Score와 Floor XP에 자동 반영되도록 연결했다.
+• `GameStateController`가 RISING 시스템을 런타임에 자동 구성하므로 씬 및 Inspector 수동 변경이 필요하지 않다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Rising/RisingConstants.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Rising/RisingLetterPickup.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Rising/RisingSystem.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Game/GameStateController.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Player/PlayerDebugInput.cs`
+• `Assets/_Project/Scripts/Runtime/Core/UI/TopHUDController.cs`
+• `Assets/_Project/Scripts/Runtime/Core/World/ElevatorController.cs`
+• `Docs/02_ITEM_SYSTEM_SPEC.md`
+• `Docs/05_WORK_LOG.md`
+
+검증 결과:
+• Unity 6000.3.17f1 생성 `Assembly-CSharp.rsp` 기준 전체 Runtime C# 컴파일 성공을 확인했다.
+• 신규 스크립트와 `.meta` 파일의 고유 GUID를 추가했다.
+• 일반 층 이동, 결과 정산과 게임 오버 일시 정지 경로를 유지한 채 RISING 시스템을 별도 책임으로 연결했다.
+• 시간이 촉박한 상태에서도 RISING 이동 중 타이머가 멈추고 도착 후 재개되는 동작을 사용자가 확인했다.
+
+남은 확인:
+• Unity Play 모드에서 문자 위치, 충돌 획득, HUD 색상과 여섯 글자 완성을 확인해야 한다.
+• Android 9:20 화면에서 RISING HUD가 기존 재화/아이템 상태 텍스트와 겹치지 않는지 확인해야 한다.
+• 실제 플레이 감각에 따라 스폰 확률, 확정 횟수, 상승 속도와 한 번에 넘길 스테이지 수를 조정해야 한다.
+
+다음 작업:
+• 재시작 최우선: RISING 전체 수집과 발동 연출을 Unity Play 모드 및 Android에서 검증한다.
+• 검증 후 캐릭터 같은 requestId 중복 지급 방지와 선택/Loadout 복구 검증을 재개한다.
+• 이후 재화 계정 A/B·타 기기 복구를 확인한다.
+
+________________________________________
+
+## 2026-10-02 Ruby 내부 기반 유지 결정
+
+결정 내용:
+• Ruby 판매 상품, 획득 경로와 소비처가 확정되지 않았으므로 실제 상품·결제·광고 보상·게임머니 교환·소비 콘텐츠 연결을 유보한다.
+• 기존 계정별 Ruby 잔액, BackND 서버 원본, 거래 원장, Pending Queue, 지급·차감 API와 잔액 부족 방어는 향후 연결을 위한 내부 기반으로 유지한다.
+• 현재 Lobby와 TopHUD의 Ruby 표시는 개발 중 잔액 확인용으로 유지하며 정식 사용자 노출 여부는 용도 확정 후 결정한다.
+
+변경된 주요 파일:
+• `Docs/00_MASTER_PROJECT_BRIEF.md`
+• `Docs/04_CODEX_EXECUTION_PLAN.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/06_BACKND_INTEGRATION_PLAN.md`
+• `Docs/07_BACKND_DATA_MIGRATION_PLAN.md`
+
+남은 확인:
+• Ruby 상품 또는 소비처 기획이 확정되면 지급 사유, 가격, 구매 제한, 환불과 서버 검증 정책을 별도 명세한다.
+
+다음 작업:
+• RISING 변경 전체를 최종 정리해 커밋·push한다.
+• 이후 캐릭터 동일 `requestId` 중복 지급 방지와 선택/Loadout 복구 검증을 재개한다.
+
+________________________________________
+
+## 2026-10-02 Android 앱 버전 게이트 구현
+
+완료 내용:
+• Android 앱 버전을 `1.0.1`, versionCode `2`로 증가시켰다.
+• BackND Google Play 최신 버전과 업데이트 유형을 조회하는 `AppVersionGate`를 추가했다.
+• Title 시작 순서를 버전 확인 후 인증 및 Lobby 사전 로드로 변경해 구버전과 확인 실패 상태에서 로그인·사용자 데이터 초기화를 차단했다.
+• 강제 업데이트 화면에 Google Play 이동과 재시도 동작을 추가하고 네트워크 또는 정책 조회 실패는 fail-closed로 처리했다.
+• Editor와 Android 이외 플랫폼은 개발 흐름을 위해 버전 게이트를 우회한다.
+• 이미 배포된 구버전 APK는 새 검사 코드를 포함하지 않는 한계를 문서화하고, 출시 전 Function 기반 `clientVersion`·`dataContractVersion` 검증과 구버전 쓰기 경로 폐쇄를 필수 항목으로 추가했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Backend/AppVersionGate.cs`
+• `Assets/_Project/Scripts/Runtime/Core/SceneFlow/TitleSceneController.cs`
+• `ProjectSettings/ProjectSettings.asset`
+• `Docs/00_MASTER_PROJECT_BRIEF.md`
+• `Docs/04_CODEX_EXECUTION_PLAN.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/06_BACKND_INTEGRATION_PLAN.md`
+• `Docs/07_BACKND_DATA_MIGRATION_PLAN.md`
+
+검증 결과:
+• Unity Editor 정의와 Android Player 정의의 `Assembly-CSharp.rsp` 기준 전체 Runtime C# 컴파일에 성공했다.
+• Android 컴파일에서 이번 변경과 무관한 기존 `PlayerSpawner.moveSpeedColumnsPerSecond` 미사용 경고 1건만 확인했다.
+• BackND 콘솔 버전 관리에 `1.0.1 / Google Play Store / 강제` 정책이 등록된 것을 확인했다.
+• `git diff --check`에서 내용 오류가 없으며 기존 LF/CRLF 변환 안내만 확인했다.
+
+남은 확인:
+• 최신 `1.0.1` APK의 정상 로그인, 구버전 차단, 네트워크 실패 후 재시도를 Android에서 확인한다.
+• 기존 `1.0` APK의 직접 GameData 접근을 완전히 막으려면 Function 경계 도입과 구버전 쓰기 경로 폐쇄가 필요하다.
+
+다음 작업:
+• 재시작 최우선: Android 최신/구버전/네트워크 실패 3경로를 검증한다.
+• 이후 RISING 변경 전체를 정리해 커밋·push한다.
+
+________________________________________
+
+## 2026-10-02 Title 앱 버전 표시 추가
+
+완료 내용:
+• 로그인 배경화면 우측 하단에 `VER {Application.version}` 형식의 버전 라벨을 추가했다.
+• 표시값을 Unity Player Settings의 앱 버전과 자동 연동해 이후 빌드 버전 변경 시 별도 UI 수정이 필요 없도록 구성했다.
+• 기존 로딩바와 상태 문구보다 아래에 배치하고 입력을 차단하지 않는 텍스트로 유지했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/SceneFlow/TitleSceneController.cs`
+• `Docs/05_WORK_LOG.md`
+
+검증 결과:
+• Unity Editor 및 Android Player 정의의 전체 Runtime C# 컴파일에 성공했다.
+• 표시 문자열이 `Application.version`을 사용하고 현재 Player Settings `1.0.1`과 연결된 것을 정적 확인했다.
+• `git diff --check`에서 내용 오류가 없으며 기존 LF/CRLF 변환 안내만 확인했다.
+
+남은 확인:
+• Unity Play 모드와 Android 9:20 화면에서 `VER 1.0.1` 표시 위치와 가독성을 확인한다.
+
+다음 작업:
+• 재시작 최우선: Android 최신/구버전/네트워크 실패 3경로와 Title 버전 표시를 함께 검증한다.
+
+________________________________________
+
+## 2026-10-02 PlayerSpawner 미사용 필드 경고 정리
+
+완료 내용:
+• Build 성공 후 남아 있던 `CS0414 PlayerSpawner.moveSpeedColumnsPerSecond` 미사용 필드 경고를 점검했다.
+• 현재 이동 속도의 권한 원본이 `CharacterDefinition.MoveSpeedColumnsPerSecond`임을 확인했다.
+• 더 이상 사용되지 않는 `PlayerSpawner` 속도 필드와 `OnValidate()` 보정, InGame 씬의 잔여 직렬화 값을 제거했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Player/PlayerSpawner.cs`
+• `Assets/_Project/Scenes/InGame.unity`
+• `Docs/05_WORK_LOG.md`
+
+검증 결과:
+• Unity Editor 및 Android Player 정의의 전체 Runtime C# 컴파일에 경고와 오류 없이 성공했다.
+• 프로젝트와 InGame 씬에 `PlayerSpawner.moveSpeedColumnsPerSecond` 참조가 남지 않은 것을 확인했다.
+• Unity Editor 최신 로그에서 `CS0414`, `PlayerSpawner` 관련 컴파일 오류가 발생하지 않은 것을 확인했다.
+• `git diff --check`에서 내용 오류가 없으며 기존 LF/CRLF 변환 안내만 확인했다.
+
+남은 확인:
+• 없음. Build 성공과 경고 제거 후 이상 없음을 사용자가 확인했다.
+
+다음 작업:
+• 재시작 최우선: Android 최신/구버전/네트워크 실패 3경로와 Title 버전 표시를 함께 검증한다.
+
+________________________________________
+
+## 2026-10-02 작업 종료 정리
+
+완료 내용:
+• RISING 무작위 수집, 중복 보상, 상승 연출, 타이머 정지와 도착 후 재개, 잔여 수직선 정리를 완료했다.
+• Ruby는 상품과 용도 확정 전까지 서버 잔액·원장·Pending Queue 기반만 내부적으로 유지하기로 확정했다.
+• Android `1.0.1` 버전 게이트, 강제 업데이트/재시도 UI, BackND 콘솔 강제 버전 등록과 Title 버전 표시를 완료했다.
+• `PlayerSpawner`의 폐기된 이동 속도 필드를 정리해 마지막 `CS0414` 경고를 제거했다.
+
+검증 결과:
+• Unity Editor 및 Android Player 정의의 전체 Runtime C# 컴파일에 경고와 오류 없이 성공했다.
+• Unity Android APK Build가 `Succeeded`로 완료됐으며 정리 후 이상 없음을 사용자가 확인했다.
+• BackND 콘솔에 `1.0.1 / Google Play Store / 강제`가 등록된 상태를 확인했다.
+
+남은 이슈:
+• 신규 `1.0.1` APK의 정상 로그인, 버전 게이트 포함 구버전 테스트 빌드 차단, 네트워크 실패 후 `RETRY`를 실기기에서 확인한다.
+• 기존 배포 `1.0` APK에는 버전 검사 코드가 없으므로 출시 전 Function 기반 `clientVersion`·`dataContractVersion` 검증과 구버전 쓰기 경로 폐쇄가 필요하다.
+• RISING 확률, 상승 속도와 이동 층 수는 실제 플레이 감각에 따라 후속 조정한다.
+
+다음 작업:
+• 재시작 최우선: Android 버전 게이트와 Title `VER 1.0.1` 표시를 실기기에서 검증한다.
+• 이후 캐릭터 동일 `requestId`, 선택/Loadout, 계정 A/B와 오프라인 Pending Queue 검증을 재개한다.
+• 재화 계정 A/B·타 기기 복구는 그다음 순번으로 유지한다.
+
+작업 기준:
+• 본 절까지의 코드와 문서를 2026-10-02 작업 종료 커밋에 포함한다.

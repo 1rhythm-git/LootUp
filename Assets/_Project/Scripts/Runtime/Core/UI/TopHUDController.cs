@@ -4,6 +4,7 @@ using LootUp.Core.Characters;
 using LootUp.Core.Game;
 using LootUp.Core.Player;
 using LootUp.Core.Profile;
+using LootUp.Core.Rising;
 using LootUp.Core.World;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -107,6 +108,7 @@ namespace LootUp.Core.UI
         private Text itemText;
         private Text feverText;
         private Text speedBuffText;
+        private readonly Text[] risingLetterTexts = new Text[RisingConstants.LetterCount];
         private Text experienceText;
         private RectTransform feverGaugeFillRect;
         private RectTransform experienceGaugeFillRect;
@@ -123,6 +125,8 @@ namespace LootUp.Core.UI
         private float currentFeverGaugeNormalized;
         private bool timerPaused;
         private bool gameOverRequested;
+        private int risingCollectedSlotMask;
+        private bool risingActive;
 
         public event Action<GameOverReason> GameOverRequested;
 
@@ -163,6 +167,10 @@ namespace LootUp.Core.UI
         {
             UpdateFeverVisual();
             RefreshSpeedBuffStatus();
+            if (risingActive)
+            {
+                RefreshRisingProgress();
+            }
 
             if (!useTimer || timerPaused || remainingSeconds <= 0f)
             {
@@ -272,6 +280,27 @@ namespace LootUp.Core.UI
         public void SetTimerPaused(bool isPaused)
         {
             timerPaused = isPaused;
+        }
+
+        public bool TryBeginRisingTransition()
+        {
+            if (gameOverRequested)
+            {
+                return false;
+            }
+
+            // 마지막 문자 획득 프레임에 0초가 되는 경합을 막고 이동 완료까지 시간을 보존한다.
+            remainingSeconds = Mathf.Max(remainingSeconds, 0.05f);
+            timerPaused = true;
+            RefreshTimer();
+            return true;
+        }
+
+        public void SetRisingProgressMask(int collectedSlotMask, bool isActive)
+        {
+            risingCollectedSlotMask = collectedSlotMask & RisingConstants.FullCollectionMask;
+            risingActive = isActive;
+            RefreshRisingProgress();
         }
 
         public void BindCharacterRuntime(PlayerCharacterRuntime runtime)
@@ -415,6 +444,7 @@ namespace LootUp.Core.UI
             timerText = CreateText("TimerText", new Vector2(0.64f, 1f), new Vector2(1f, 1f), new Vector2(8f, -58f), new Vector2(-18f, -12f), TextAnchor.UpperRight, 43, primaryTextColor);
             scoreText = CreateText("ScoreText", new Vector2(0.64f, 1f), new Vector2(1f, 1f), new Vector2(8f, -104f), new Vector2(-18f, -60f), TextAnchor.UpperRight, 36, secondaryTextColor);
             CreateCurrencyDisplays();
+            CreateRisingDisplay();
             itemText = CreateText("ItemStatusText", new Vector2(0.64f, 1f), new Vector2(1f, 1f), new Vector2(8f, -138f), new Vector2(-18f, -106f), TextAnchor.UpperRight, 29, secondaryTextColor);
             speedBuffText = CreateText("SpeedBuffText", new Vector2(0.64f, 1f), new Vector2(1f, 1f), new Vector2(8f, -172f), new Vector2(-18f, -140f), TextAnchor.UpperRight, 27, feverReadyColor);
             CreateFeverGauge();
@@ -431,6 +461,10 @@ namespace LootUp.Core.UI
         private void ClearRuntimeRootChildren()
         {
             heartImages.Clear();
+            for (int i = 0; i < risingLetterTexts.Length; i++)
+            {
+                risingLetterTexts[i] = null;
+            }
 
             for (int i = runtimeRoot.childCount - 1; i >= 0; i--)
             {
@@ -544,6 +578,40 @@ namespace LootUp.Core.UI
 
             CreateCurrencyIcon("RunGameMoneyIcon", "Items/Icons/score_coin", new Vector2(0.41f, 1f), new Vector2(0f, -80f), new Vector2(28f, -52f));
             runGameMoneyText = CreateText("RunGameMoneyText", new Vector2(0.445f, 1f), new Vector2(0.635f, 1f), new Vector2(0f, -84f), new Vector2(0f, -48f), TextAnchor.MiddleLeft, 22, feverReadyColor);
+        }
+
+        private void CreateRisingDisplay()
+        {
+            Image background = CreateImage(
+                "RisingProgressBackground",
+                new Vector2(0.27f, 1f),
+                new Vector2(0.635f, 1f),
+                new Vector2(0f, -136f),
+                new Vector2(0f, -94f),
+                new Color(0f, 0f, 0f, 0.58f));
+            AddOutline(background.gameObject, new Color(1f, 1f, 1f, 0.22f), new Vector2(1f, -1f));
+
+            float segmentWidth = 1f / RisingConstants.LetterCount;
+            for (int i = 0; i < RisingConstants.LetterCount; i++)
+            {
+                float minX = 0.27f + 0.365f * segmentWidth * i;
+                float maxX = 0.27f + 0.365f * segmentWidth * (i + 1);
+                Text letterText = CreateText(
+                    $"RisingLetter_{i}",
+                    new Vector2(minX, 1f),
+                    new Vector2(maxX, 1f),
+                    new Vector2(0f, -136f),
+                    new Vector2(0f, -94f),
+                    TextAnchor.MiddleCenter,
+                    28,
+                    secondaryTextColor);
+                letterText.fontStyle = FontStyle.Bold;
+                letterText.text = RisingConstants.GetLetter(i).ToString();
+                AddOutline(letterText.gameObject, new Color(0f, 0f, 0f, 0.9f), new Vector2(2f, -2f));
+                risingLetterTexts[i] = letterText;
+            }
+
+            RefreshRisingProgress();
         }
 
         private void CreateCurrencyIcon(string objectName, string resourcePath, Vector2 anchor, Vector2 offsetMin, Vector2 offsetMax)
@@ -711,9 +779,37 @@ namespace LootUp.Core.UI
             RefreshScore();
             RefreshCurrencies();
             RefreshItemStatus();
+            RefreshRisingProgress();
             RefreshCharacterExperience();
             RefreshFeverGauge(characterRuntime != null ? characterRuntime.FeverGaugeNormalized : 0f);
             RefreshSpeedBuffStatus();
+        }
+
+        private void RefreshRisingProgress()
+        {
+            for (int i = 0; i < risingLetterTexts.Length; i++)
+            {
+                Text letterText = risingLetterTexts[i];
+                if (letterText == null)
+                {
+                    continue;
+                }
+
+                bool collected = (risingCollectedSlotMask & (1 << i)) != 0;
+                Color inactiveColor = new Color(
+                    secondaryTextColor.r,
+                    secondaryTextColor.g,
+                    secondaryTextColor.b,
+                    0.28f);
+                Color activeColor = RisingConstants.GetColor(i);
+                if (risingActive)
+                {
+                    float pulse = 0.82f + Mathf.PingPong(Time.unscaledTime * 2.2f, 0.18f);
+                    activeColor = Color.Lerp(activeColor, Color.white, pulse * 0.35f);
+                }
+
+                letterText.color = collected ? activeColor : inactiveColor;
+            }
         }
 
         private void RefreshIdentity()

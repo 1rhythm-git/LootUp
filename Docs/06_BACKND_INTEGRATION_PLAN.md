@@ -19,6 +19,7 @@ Android AAR의 최소 SDK는 22이며 현재 프로젝트의 최소 SDK 25와 �
 | P0 콘솔 인증 정보 | 완료 | 인증값은 SDK 설정 자산에만 저장 |
 | P1 SDK 임포트/컴파일 | 완료 | Unity 6000.3.17f1 컴파일 성공 |
 | P2 SDK 초기화 계층 | 완료 | Play Mode 실제 서버 초기화 성공 확인 |
+| P2.5 앱 버전 게이트 | 콘솔 등록 완료 | Android 1.0.1 실기기 검증 필요 |
 | P3 로그인 연동 | 완료 | 회원가입·수동 로그인·ID/PW 기억하기 사용자 검증 완료 |
 | P4~P5 LANK 연동 | 완료 | Editor 및 Android 실제 계정 검증 완료 |
 
@@ -59,6 +60,23 @@ Android AAR의 최소 SDK는 22이며 현재 프로젝트의 최소 SDK 25와 �
 Google 로그인은 `Backend-5.18.3.unitypackage`만으로 완료되지 않는다.
 Google Play Console, OAuth, Play Games Services 설정과 별도 GPGS 플러그인이
 필요하므로 Custom 로그인 안정화 이후 별도 단계로 진행한다.
+
+### P0. 앱 버전 및 업데이트 정책
+
+- 현재 Android 앱 버전: `1.0.1`, versionCode `2`
+- 뒤끝 콘솔 버전 관리의 Google Play 최신 버전에 `1.0.1`을 등록한다.
+- 운영 배포에서는 업데이트 유형을 강제로 설정해 더 낮은 버전의 로그인과 사용자 데이터 초기화를 차단한다.
+- `AppVersionGate`는 `Backend.Utils.GetLatestVersion(VersionInfo.GooglePlayStore)`를 사용한다.
+- Title은 버전 확인 성공 전 `AuthenticationManager.InitializeAsync()`와 Lobby 프리로드를 시작하지 않는다.
+- 강제 업데이트는 Google Play의 `com.lafgames.LootUp` 상세 페이지를 열고, 확인 실패는 fail-closed 후 재시도만 허용한다.
+- 선택 업데이트는 접속을 허용하되 로그로 업데이트 가능 상태를 남긴다.
+- Editor와 Android 이외 플랫폼은 개발 확인을 위해 클라이언트 게이트를 우회한다.
+
+중요한 제한: 이미 배포된 구버전 APK는 새 버전 확인 코드를 포함하지 않으므로
+콘솔 버전 등록만으로 기존 클라이언트의 모든 GameData API 호출이 자동 차단된다고
+간주하지 않는다. 운영 전 주요 쓰기 요청을 BackND Function으로 이동하고
+`clientVersion`, `dataContractVersion`을 검증한다. 호환되지 않는 스키마 변경은
+신규 테이블/Function 경로로 배포하고 구버전 쓰기 경로를 폐쇄한다.
 
 ### P0. 랭킹 테이블 및 정렬 정책
 
@@ -282,8 +300,10 @@ Private `LootUpCharacterProgress`, `LootUpPlayerLoadout`,
 | 완료 | `LootUpPlayerProfile`, `LootUpCurrencyLedger` Private 테이블 생성 | 사용자/Codex | 실제 계정 검증 완료 |
 | 수동 | 랭킹 상한과 초기화 주기 확정 | 사용자 | 게임 운영 정책 |
 | 수동 | Google Play/OAuth/GPGS 설정 | 사용자 | Google 로그인 진행 시 |
+| 완료 | Google Play 최신 버전 `1.0.1` 강제 업데이트 등록 | 사용자/Codex | Android 빌드 전 |
 | 자동 | SDK 임포트 및 컴파일 수정 | Codex | 인증 정보 준비 |
 | 자동 | 초기화 및 인증 서비스 구현 | Codex | 계정 정책 확정 |
+| 자동 | Title 선행 버전 게이트와 업데이트/재시도 UI | Codex | BackND SDK 5.18.3 |
 | 자동 | LANK 서비스 및 UI 상태 구현 | Codex | 테이블/랭킹 UUID 준비 |
 | 자동 | 기록 저장, 전역 순위, MY LANK 연결 | Codex | 랭킹 정책 확정 |
 | 자동 | 계정별 누적 BEST와 기간 랭킹 저장 분리 | Codex | `LootUpBest` 테이블 준비 |
@@ -305,6 +325,8 @@ Editor/Android 실기기 검증도 완료했다.
 구현했다. XP 선반영, 보유 상태의 전체 진행 덮어쓰기, Pending 저장 실패 무시를
 수정하고 초기 동기화 실패 시 로그인 완료를 차단했다. 콘솔 테이블 생성, 실제 계정
 최초 이관, XP 원장 반영과 모바일 레벨/경험치 복구 검증을 완료했다.
+Android 앱 버전 게이트 코드와 BackND 콘솔 `1.0.1` 강제 업데이트 등록을
+완료했으며 최신/구버전/네트워크 실패 실기기 검증이 남아 있다.
 
 - Unity Editor에서 `LEADERBOARD NOT FOUND` 오류가 사라지고 LANK 조회 정상 동작 확인
 - 게임 종료 후 `LootUpRank` 행과 `LootUp Global Rank` 반영 확인
@@ -314,8 +336,12 @@ Editor/Android 실기기 검증도 완료했다.
 향후 서버 이관 대상과 로컬 유지 정보, 충돌 정책 및 테이블 경계는
 `Docs/07_BACKND_DATA_MIGRATION_PLAN.md`를 기준으로 진행한다. 다음 우선순위는
 캐릭터 동일 `requestId`·Loadout·계정 A/B·Pending 후속 검증, 재화 계정
-A/B·타 기기/Ruby 후속 검증,
+A/B·타 기기 복구 검증,
 Artifact/Character Coin, 런 정산 원장 순서다.
+
+Ruby는 판매 상품과 소비처가 확정될 때까지 `LootUpPlayerProfile` 잔액,
+`LootUpCurrencyLedger` 원장, Pending Queue와 지급/차감 API만 내부 기반으로 유지한다.
+상품 테이블, 결제, 광고 보상, 게임머니 교환과 실제 소비 UI는 현재 범위에서 제외한다.
 
 다음 서버 연동 후보는 기간 랭킹 보상/지급 원장, Google 로그인,
 기록 위변조 검증과 운영 장애 대응이다.

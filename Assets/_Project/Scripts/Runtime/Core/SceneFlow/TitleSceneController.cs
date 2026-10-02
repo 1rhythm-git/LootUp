@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Threading.Tasks;
 using LootUp.Core.Authentication;
+using LootUp.Core.Backend;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -18,6 +19,8 @@ namespace LootUp.Core.SceneFlow
         private const int AccountIdMaximumLength = 20;
         private const int PasswordMinimumLength = 6;
         private const int PasswordMaximumLength = 32;
+        private const string GooglePlayStoreUrl =
+            "https://play.google.com/store/apps/details?id=com.lafgames.LootUp";
 
         [SerializeField]
         private Sprite backgroundSprite;
@@ -42,6 +45,10 @@ namespace LootUp.Core.SceneFlow
         private RectTransform guestLoginRoot;
         private RectTransform nicknameSetupRoot;
         private RectTransform googleLoginRoot;
+        private RectTransform versionGateRoot;
+        private Text versionGateMessageText;
+        private Button versionUpdateButton;
+        private Button versionRetryButton;
         private Text accountFlowTitleText;
         private Text loginMessageText;
         private InputField accountIdInput;
@@ -61,6 +68,7 @@ namespace LootUp.Core.SceneFlow
         private bool isReadyForTouch;
         private bool isLoginPanelVisible;
         private bool isAuthenticationOperationActive;
+        private bool isVersionCheckActive;
         private bool sceneActivationRequested;
         private float blinkElapsed;
         private string verifiedNickname = string.Empty;
@@ -71,6 +79,57 @@ namespace LootUp.Core.SceneFlow
         {
             BuildTitleUI();
             EnsureEventSystem();
+
+            yield return RunStartupFlow();
+        }
+
+        private IEnumerator RunStartupFlow()
+        {
+            if (isVersionCheckActive)
+            {
+                yield break;
+            }
+
+            isVersionCheckActive = true;
+            HideVersionGate();
+            statusText.text = "CHECKING VERSION";
+            SetStatusTextAlpha(1f);
+            SetLoadingProgress(0f);
+
+            Task<AppVersionGateResult> versionTask =
+                AppVersionGate.CheckAsync();
+            while (!versionTask.IsCompleted)
+            {
+                yield return null;
+            }
+
+            if (versionTask.IsFaulted || versionTask.IsCanceled)
+            {
+                isVersionCheckActive = false;
+                ShowVersionGate(
+                    new AppVersionGateResult(
+                        AppVersionGateStatus.CheckFailed,
+                        Application.version,
+                        string.Empty,
+                        "Version check could not be completed."));
+                yield break;
+            }
+
+            AppVersionGateResult versionResult = versionTask.Result;
+            if (!versionResult.CanAccessServer)
+            {
+                isVersionCheckActive = false;
+                ShowVersionGate(versionResult);
+                yield break;
+            }
+
+            if (versionResult.Status == AppVersionGateStatus.OptionalUpdate)
+            {
+                Debug.Log(
+                    $"[VersionGate] 선택 업데이트 가능: "
+                    + $"{versionResult.CurrentVersion} -> "
+                    + versionResult.LatestVersion);
+            }
 
             Task<AuthenticationResult> authenticationTask =
                 AuthenticationManager.InitializeAsync(false, true);
@@ -109,7 +168,74 @@ namespace LootUp.Core.SceneFlow
             }
 
             SetLoadingProgress(1f);
+            isVersionCheckActive = false;
             ApplyInitialAuthenticationResult(authenticationTask.Result);
+        }
+
+        private void OnVersionRetryButtonPressed()
+        {
+            if (!isVersionCheckActive)
+            {
+                StartCoroutine(RunStartupFlow());
+            }
+        }
+
+        private static void OnVersionUpdateButtonPressed()
+        {
+            Application.OpenURL(GooglePlayStoreUrl);
+        }
+
+        private void ShowVersionGate(AppVersionGateResult result)
+        {
+            isReadyForTouch = false;
+            isLoginPanelVisible = false;
+            if (loginPanelRoot != null)
+            {
+                loginPanelRoot.gameObject.SetActive(false);
+            }
+
+            if (versionGateRoot != null)
+            {
+                versionGateRoot.gameObject.SetActive(true);
+            }
+
+            bool requiresUpdate =
+                result.Status == AppVersionGateStatus.RequiredUpdate;
+            if (versionGateMessageText != null)
+            {
+                versionGateMessageText.text = requiresUpdate
+                    ? $"CURRENT {result.CurrentVersion}\nLATEST {result.LatestVersion}\nUPDATE TO CONTINUE"
+                    : "VERSION CHECK FAILED\nCHECK NETWORK AND RETRY";
+            }
+
+            if (versionUpdateButton != null)
+            {
+                versionUpdateButton.gameObject.SetActive(requiresUpdate);
+            }
+
+            if (versionRetryButton != null)
+            {
+                versionRetryButton.interactable = true;
+            }
+
+            statusText.text = requiresUpdate
+                ? "UPDATE REQUIRED"
+                : "CONNECTION REQUIRED";
+            SetStatusTextAlpha(1f);
+
+            if (!string.IsNullOrWhiteSpace(result.Message))
+            {
+                Debug.LogWarning(
+                    $"[VersionGate] {result.Status}: {result.Message}");
+            }
+        }
+
+        private void HideVersionGate()
+        {
+            if (versionGateRoot != null)
+            {
+                versionGateRoot.gameObject.SetActive(false);
+            }
         }
 
         private void Update()
@@ -971,6 +1097,7 @@ namespace LootUp.Core.SceneFlow
             }
 
             CreateLoginPanel(root);
+            CreateVersionGate(root);
 
             RectTransform loadingBarRoot = CreateImage(
                 root,
@@ -999,6 +1126,17 @@ namespace LootUp.Core.SceneFlow
                 new Vector2(0.18f, 0.105f),
                 new Vector2(0.82f, 0.16f),
                 48);
+
+            Text versionText = CreateText(
+                root,
+                "VersionText",
+                $"VER {Application.version}",
+                new Vector2(0.64f, 0.012f),
+                new Vector2(0.96f, 0.052f),
+                24);
+            versionText.alignment = TextAnchor.MiddleRight;
+            versionText.fontStyle = FontStyle.Normal;
+            versionText.color = new Color(1f, 1f, 1f, 0.72f);
         }
 
         private void SetLoadingProgress(float progress)
@@ -1013,11 +1151,57 @@ namespace LootUp.Core.SceneFlow
             if (statusText != null
                 && !isReadyForTouch
                 && !isLoginPanelVisible
-                && !isAuthenticationOperationActive)
+                && !isAuthenticationOperationActive
+                && !isVersionCheckActive)
             {
                 statusText.text =
                     $"LOADING {Mathf.RoundToInt(progress * 100f)}%";
             }
+        }
+
+        private void CreateVersionGate(RectTransform root)
+        {
+            Image dimmer = CreateImage(
+                root,
+                "VersionGate",
+                Vector2.zero,
+                Vector2.one,
+                new Color(0f, 0f, 0f, 0.88f),
+                null);
+            dimmer.raycastTarget = true;
+            versionGateRoot = dimmer.rectTransform;
+
+            CreateText(
+                versionGateRoot,
+                "VersionGateTitle",
+                "APP UPDATE",
+                new Vector2(0.12f, 0.58f),
+                new Vector2(0.88f, 0.68f),
+                48);
+            versionGateMessageText = CreateText(
+                versionGateRoot,
+                "VersionGateMessage",
+                "CHECKING VERSION",
+                new Vector2(0.12f, 0.42f),
+                new Vector2(0.88f, 0.57f),
+                30);
+            versionGateMessageText.fontStyle = FontStyle.Normal;
+
+            versionUpdateButton = CreateButton(
+                versionGateRoot,
+                "VersionUpdateButton",
+                "UPDATE",
+                new Vector2(0.18f, 0.30f),
+                new Vector2(0.82f, 0.37f),
+                OnVersionUpdateButtonPressed);
+            versionRetryButton = CreateButton(
+                versionGateRoot,
+                "VersionRetryButton",
+                "RETRY",
+                new Vector2(0.18f, 0.21f),
+                new Vector2(0.82f, 0.28f),
+                OnVersionRetryButtonPressed);
+            versionGateRoot.gameObject.SetActive(false);
         }
 
         private void CreateLoginPanel(RectTransform root)

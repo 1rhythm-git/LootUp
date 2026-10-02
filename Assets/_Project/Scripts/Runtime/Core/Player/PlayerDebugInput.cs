@@ -1,11 +1,13 @@
 using System;
 using LootUp.Core.Characters;
+using LootUp.Core.Rising;
 using LootUp.Core.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace LootUp.Core.Player
 {
+    [DefaultExecutionOrder(-100)]
     public sealed class PlayerDebugInput : MonoBehaviour
     {
         private const float TimeCheatSeconds = 30f;
@@ -43,6 +45,12 @@ namespace LootUp.Core.Player
                 || keyboard.numpad3Key.wasPressedThisFrame)
             {
                 TriggerHealTest();
+            }
+
+            if (keyboard.digit4Key.wasPressedThisFrame
+                || keyboard.numpad4Key.wasPressedThisFrame)
+            {
+                TriggerRisingDrawTest();
             }
         }
 
@@ -98,6 +106,18 @@ namespace LootUp.Core.Player
 
             int healedLife = playerHealth.Heal(1);
             Debug.Log($"Life heal test input detected: +{healedLife} HP", logContext);
+        }
+
+        private void TriggerRisingDrawTest()
+        {
+            RisingSystem risingSystem = FindFirstObjectByType<RisingSystem>();
+            if (risingSystem == null)
+            {
+                Debug.LogWarning("RISING 테스트를 실행할 RisingSystem을 찾을 수 없습니다.", logContext);
+                return;
+            }
+
+            risingSystem.AcquireRandomLetterForDebug();
         }
     }
 }

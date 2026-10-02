@@ -3,6 +3,7 @@ using LootUp.Core.Characters;
 using LootUp.Core.Items;
 using LootUp.Core.Leaderboard;
 using LootUp.Core.Player;
+using LootUp.Core.Rising;
 using LootUp.Core.SceneFlow;
 using LootUp.Core.UI;
 using LootUp.Core.World;
@@ -74,6 +75,7 @@ namespace LootUp.Core.Game
         // (추가) 정산과 결과 화면 책임은 전용 협력 객체에 위임한다.
         private RunResultService runResultService;
         private RunResultPresenter runResultPresenter;
+        private RisingSystem risingSystem;
 
         public bool IsGameOver => isGameOver;
         public GameOverReason GameOverReason => gameOverReason;
@@ -341,6 +343,21 @@ namespace LootUp.Core.Game
                     confirmButtonTextColor,
                     gameOverFontSize,
                     resultFontSize));
+
+            risingSystem ??= GetComponent<RisingSystem>();
+            if (risingSystem == null)
+            {
+                risingSystem = gameObject.AddComponent<RisingSystem>();
+            }
+
+            risingSystem.Configure(
+                floorManager,
+                FindFirstObjectByType<BuildingGridUI>(),
+                elevatorController,
+                playerSpawner,
+                itemSpawner,
+                topHUDController,
+                targetCanvas);
         }
 
         private Canvas ResolveTargetCanvas()

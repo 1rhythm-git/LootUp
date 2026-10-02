@@ -60,6 +60,17 @@ namespace LootUp.Core.World
         public int CurrentFloorStartColumn { get; private set; }
         public int CurrentAbsoluteFloor => floorManager != null ? floorManager.CurrentAbsoluteFloor : 1;
         public float PlatformHeight => Mathf.Max(1f, elevatorSize.y);
+        public int ActiveElevatorColumn => GetCurrentElevatorColumn();
+        public int InactiveElevatorColumn
+        {
+            get
+            {
+                int activeColumn = GetCurrentElevatorColumn();
+                int leftColumn = GetElevatorColumnForAbsoluteFloor(2);
+                int rightColumn = GetElevatorColumnForAbsoluteFloor(1);
+                return activeColumn == leftColumn ? rightColumn : leftColumn;
+            }
+        }
 
         private void Awake()
         {
@@ -77,6 +88,8 @@ namespace LootUp.Core.World
             {
                 floorManager.CurrentFloorChanged += HandleCurrentFloorChanged;
             }
+
+            ApplyElevatorPosition();
         }
 
         private void Start()
@@ -143,6 +156,11 @@ namespace LootUp.Core.World
             }
 
             StartCoroutine(AscendToNextFloor());
+        }
+
+        public void ClearTravelGuideLines()
+        {
+            DestroyAllCableVisuals();
         }
 
         private IEnumerator AscendToNextFloor()
@@ -322,6 +340,7 @@ namespace LootUp.Core.World
                 Transform child = elevatorLayer.GetChild(i);
                 if (child != null && child.name.StartsWith("ElevatorGuideLine_"))
                 {
+                    child.gameObject.SetActive(false);
                     Destroy(child.gameObject);
                 }
             }

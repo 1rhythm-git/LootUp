@@ -23,7 +23,9 @@ ________________________________________
 •	캐릭터별 성장/보유/선택/장착 BackND 코드 이관과 데이터 일관성 리팩터링은 완료되었다.
 •	캐릭터 Private 테이블 3개 생성, 최초 이관, XP 원장 반영과 모바일 진행도 복구 검증을 완료했다.
 •	재개 최우선: 동일 `requestId` 중복 지급 방지와 선택/Loadout·계정 A/B·오프라인 Pending Queue 검증.
-•	재화 계정 A/B·타 기기 복구와 Ruby 지급/사용 검증은 캐릭터 후속 검증 다음 순번으로 유보한다.
+•	재화 계정 A/B·타 기기 복구는 캐릭터 후속 검증 다음 순번으로 유보한다.
+•	Ruby는 판매 상품과 용도가 확정될 때까지 서버 잔액·원장·동기화 기반만 유지하고 실제 지급/사용 콘텐츠 검증은 진행하지 않는다.
+•	Android `1.0.1`부터 Title 선행 버전 게이트를 적용하고 BackND 콘솔 강제 업데이트 등록을 완료했으며 실기기 검증이 남아 있다.
 ________________________________________
 PART 1
 프로젝트 베이스 구축
@@ -480,6 +482,8 @@ BackND SDK를 서비스 경계 뒤에 연결하고 계정별 인증과 LANK를 �
 •	게임 종료 기록 제출과 순위 조회
 구현 상태
 •	BackND 5.18.3 SDK 초기화와 Android 패키지명 및 Google Hash 설정 완료
+•	Title에서 BackND 최신 버전을 먼저 조회하고 강제 업데이트 또는 확인 실패 시 인증·서버 데이터 초기화를 차단
+•	Google Play 업데이트 이동 및 네트워크 재시도 UI 구현, 앱 버전 `1.0.1`과 versionCode `2` 적용
 •	`IAuthenticationService`에 Custom 회원가입, 수동 로그인, 로그아웃 계약 구현
 •	`AuthenticationManager`에 `SignedOut`, `Authenticating`, `Authenticated`, `Failed` 상태와 변경 이벤트 구현
 •	Title에서 Lobby를 사전 로드하되 앱 시작마다 로그인 UI를 표시하고 자동 로그인하지 않음
@@ -501,8 +505,9 @@ BackND SDK를 서비스 경계 뒤에 연결하고 계정별 인증과 LANK를 �
 후속 작업
 •	캐릭터 콘솔 테이블 생성, 최초 이관, XP 원장 반영과 모바일 진행도 복구 검증 완료
 •	유보 1: 동일 `requestId`, 선택/Loadout, 계정 A/B와 오프라인 Pending Queue 검증
-•	재화 계정 A/B·타 기기 복구와 Ruby 지급/사용/잔액 부족 검증
+•	재화 계정 A/B·타 기기 복구 검증. Ruby 지급/차감 API는 내부 기반으로 유지하되 상품·획득 경로·소비처 확정 전에는 콘텐츠와 연결하지 않음
 •	출시 전: BackND Function 기반 재화/XP 요청 검증과 동시 최초 이관 단일화
+•	출시 전: Function 요청에 `clientVersion`과 `dataContractVersion`을 포함하고 구버전 쓰기 경로를 폐쇄
 •	신규 캐릭터 추가 전: 코드 카탈로그를 ScriptableObject 단일 원본으로 통합
 •	실계정 검증 후: 캐릭터 Manager/BackND 저장소의 추가 책임 분리 여부 재평가
 •	Google 로그인
@@ -517,8 +522,8 @@ PART 18
 최종 통합 테스트
 테스트 흐름
 1.	Loading 진입 및 로딩바 미표시 확인
-2.	Title 진입 및 로딩 진행률 확인
-3.	Title 로그인 UI가 표시되는지 확인
+2.	Title 진입 시 버전 확인이 로그인과 서버 데이터 동기화보다 먼저 수행되는지 확인
+3.	최신 버전은 로그인 UI, 강제 업데이트 구버전은 `UPDATE`, 네트워크 실패는 `RETRY` 상태가 표시되는지 확인
 4.	신규 가입에서 Account ID/Password 입력 후 Nickname 설정 단계로 전환되는지 확인
 5.	저장된 ID/PW는 ID 평문과 Password 마스킹 상태로 복원되고 자동 로그인하지 않는지 확인
 6.	인증 성공 후 하단 점멸 `TOUCH` 입력으로 Lobby 진입

@@ -32,9 +32,6 @@ namespace LootUp.Core.Player
         private int startColumn;
 
         [SerializeField]
-        private float moveSpeedColumnsPerSecond = 4f;
-
-        [SerializeField]
         private Vector2 playerSize = new Vector2(61f, 72f);
 
         [SerializeField]
@@ -152,7 +149,6 @@ namespace LootUp.Core.Player
         private void OnValidate()
         {
             startColumn = Mathf.Max(0, startColumn);
-            moveSpeedColumnsPerSecond = Mathf.Max(0f, moveSpeedColumnsPerSecond);
             playerSize.x = Mathf.Max(1f, playerSize.x);
             playerSize.y = Mathf.Max(1f, playerSize.y);
         }
