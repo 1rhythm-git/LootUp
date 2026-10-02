@@ -5763,3 +5763,30 @@ ________________________________________
 
 다음 작업:
 • 콘솔 작업을 재개할 수 없으면 `PlayerRespawnController` 정식 분리 또는 Artifact 서버 이관 설계를 진행한다.
+
+________________________________________
+
+## 2026-10-02 BackND 캐릭터 진행 테이블 생성
+
+완료 내용:
+• 뒤끝 콘솔에 Private `LootUpCharacterProgress`, `LootUpPlayerLoadout`, `LootUpCharacterProgressLedger`를 생성했다.
+• 세 테이블 모두 스키마 정의 및 활성 상태로 설정하고 `Docs/07_BACKND_DATA_MIGRATION_PLAN.md`의 확정 컬럼을 반영했다.
+• 로그인 시 발생한 `404 / NotFoundException / table not found`의 원인이 캐릭터 진행 테이블 미생성이었음을 확인했다.
+
+변경된 주요 파일:
+• `Docs/05_WORK_LOG.md`
+• `Docs/06_BACKND_INTEGRATION_PLAN.md`
+• `Docs/07_BACKND_DATA_MIGRATION_PLAN.md`
+
+검증 결과:
+• 콘솔 테이블 목록에서 세 테이블의 `private`, `스키마 정의`, `활성` 상태를 확인했다.
+• `LootUpCharacterProgress` 6개, `LootUpPlayerLoadout` 4개, `LootUpCharacterProgressLedger` 9개 사용자 컬럼을 확인했다.
+
+남은 확인:
+• 동일 계정으로 다시 로그인해 진행 데이터 4행과 Loadout 1행이 최초 생성되고 Lobby에 진입하는지 확인해야 한다.
+• XP 지급 후 진행 행과 원장 행이 함께 갱신되고 같은 requestId 재시도가 중복 지급되지 않는지 확인해야 한다.
+• 선택 캐릭터 변경, 재로그인, 계정 A/B, 타 기기 복구와 오프라인 Pending Queue를 확인해야 한다.
+
+다음 작업:
+• 재시작 최우선: 실제 계정 로그인 후 캐릭터 4행과 Loadout 1행 생성 및 Lobby 진입 검증.
+• 캐릭터 검증 완료 후 재화 계정 A/B·타 기기 복구와 Ruby 지급/사용/잔액 부족을 확인한다.

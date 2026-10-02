@@ -262,8 +262,8 @@ Lobby `BEST`는 리더보드 기간과 무관한 계정 누적 최고 기록이�
 
 뒤끝 콘솔에는 `Docs/07_BACKND_DATA_MIGRATION_PLAN.md` 3.2의 스키마대로
 Private `LootUpCharacterProgress`, `LootUpPlayerLoadout`,
-`LootUpCharacterProgressLedger`를 생성한다. 코드 구현과 정적 컴파일은 완료됐고
-실제 계정 검증은 테이블 생성 후 진행한다.
+`LootUpCharacterProgressLedger`를 스키마 정의 및 활성 상태로 생성했다. 코드 구현과
+정적 컴파일도 완료됐으며, 다음 단계는 실제 계정 최초 이관과 재로그인 검증이다.
 
 ### P9. 선택 작업
 
