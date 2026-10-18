@@ -1,0 +1,2 @@
+Date,TaskId,Workstream,Description,EstimatedHours,EarnedHours,State,Reference
+2026-10-18,SYS-TRACKER-SETUP,OUT_OF_SCOPE,"출시 일정 및 작업량 계측 체계 수립",1.0,0.0,OutOfScope,"Docs/09_RELEASE_PROGRESS_TRACKER.md"

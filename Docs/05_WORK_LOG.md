@@ -6001,3 +6001,135 @@ ________________________________________
 
 작업 기준:
 • 본 절까지의 코드와 문서를 2026-10-02 작업 종료 커밋에 포함한다.
+
+________________________________________
+
+## 2026-10-18 원격 동기화 및 캐릭터 검증 재개
+
+완료 내용:
+• 커밋 `087569d`를 `origin/migration/desktop-codex`에 push했다.
+• GitHub 이전 안내에 따라 origin을 `https://github.com/1rhythm-git/LootUp.git`으로 갱신했다.
+• 기존 Android APK의 패키지 `com.lafgames.LootUp`, versionName `1.0.1`, versionCode `2`를 확인했다.
+• 동일 캐릭터 XP `requestId`를 두 번 전송해 첫 요청 `Applied`, 두 번째 요청 `Duplicate`와 최종 XP 불변을 확인하는 Editor 메뉴를 추가했다.
+• 다른 보유 캐릭터 선택, 서버 재동기화, 원래 캐릭터 복원을 검증하는 Loadout 왕복 Editor 메뉴를 추가했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Editor/CharacterProgressionValidationMenu.cs`
+• `Docs/05_WORK_LOG.md`
+
+검증 절차:
+• Play Mode에서 BackND 로그인과 캐릭터 동기화를 완료한다.
+• `LootUp > Validation > Character Progression > Validate Duplicate XP Request`를 실행한다.
+• `LootUp > Validation > Character Progression > Validate Loadout Round Trip`을 실행한다.
+• Console에서 두 결과 모두 `Passed=True`인지 확인한다.
+
+검증 결과:
+• Unity `Assembly-CSharp-Editor.rsp` 기준 신규 Editor 검증 메뉴 컴파일에 성공했다.
+• 실제 로그인 계정에서 동일 XP `requestId`를 두 번 전송한 결과 `First=Applied`, `Second=Duplicate`, `Level=5`, `XP=61`, `Passed=True`를 확인했다.
+• 동일 요청 재시도로 XP가 중복 지급되지 않고 서버 권한 진행도가 유지됐다.
+• `git diff --check`에서 내용 오류가 없으며 기존 LF/CRLF 변환 안내만 확인했다.
+
+남은 확인:
+• 현재 ADB 연결 기기가 없어 Android 버전 게이트 실기기 검증은 계속 유보한다.
+• Editor Play Mode 로그인 계정에서 Loadout 왕복 메뉴의 서버 결과를 확인해야 한다.
+
+다음 작업:
+• 재시작 최우선: Editor에서 캐릭터 Loadout 왕복 메뉴를 실행해 결과를 확인한다.
+• Android 기기 연결 시 버전 게이트와 Title `VER 1.0.1` 표시 검증을 재개한다.
+
+________________________________________
+
+## 2026-10-18 Google Play 12월 출시 일정 수립
+
+완료 내용:
+• 2026-10-19부터 2026-12-31까지 평일 1시간, 주말 2~3시간 기준 약 104시간의 출시 로드맵을 수립했다.
+• UI 리뉴얼을 제외하고 미션, 우편함, 업그레이드, 상점, 환경설정, 레벨 디자인/BM과 출시 공통 작업을 주차별로 배치했다.
+• 기능 동결을 12월 6일, 비공개 테스트 종료를 12월 20일, 프로덕션 제출을 12월 21일로 설정했다.
+• Ruby 판매와 소비는 계속 유보하고 출시 상점은 GameMoney 기반 소수 상품을 기준안으로 설정했다.
+• Google Play 신규 개인 계정의 비공개 테스트 요건과 Target API 36 검증을 출시 게이트에 포함했다.
+
+변경된 주요 파일:
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/04_CODEX_EXECUTION_PLAN.md`
+• `Docs/05_WORK_LOG.md`
+
+검증 결과:
+• 기존 기획의 Ruby 내부 기반 유지, 캐릭터 강화 기반, BackND 데이터 이관 우선순위와 일정이 충돌하지 않는 것을 확인했다.
+• Google Play 공식 도움말 기준 테스트, 심사 준비와 Target API 요구사항을 일정에 반영했다.
+
+남은 확인:
+• Play Console 계정이 2023-11-13 이후 생성된 개인 계정인지 확인해 12명·14일 비공개 테스트 의무 적용 여부를 확정한다.
+• 출시 BM 기준안인 GameMoney 상점과 광고 BM 범위를 11월 1일까지 승인한다.
+
+다음 작업:
+• 재시작 최우선: Editor 캐릭터 Loadout 왕복 검증을 완료한다.
+• 1주차에 Android 버전 게이트, Pending Queue와 출시 BM 초안을 함께 확정한다.
+
+________________________________________
+
+## 2026-10-18 RISING 알파벳 획득 효과음 연결
+
+완료 내용:
+• RISING 알파벳 획득 시 일반 아이템 획득과 동일한 `GameSfxId.ItemGain` 효과음을 재생하도록 연결했다.
+• 실제 충돌 획득과 숫자키 4 테스트 획득 모두 공통 `AcquireLetter()` 경로에서 효과음이 한 번 재생되도록 구성했다.
+• 신규 알파벳, 중복 알파벳 보상, RISING 완성 및 상승 연출 로직은 변경하지 않았다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Rising/RisingSystem.cs`
+• `Docs/05_WORK_LOG.md`
+
+검증 결과:
+• 일반 아이템의 기존 획득 효과음 호출과 동일한 `GameSfxPlayer.Play(GameSfxId.ItemGain)` 경로를 사용하는 것을 정적 확인했다.
+• Unity 6000.3.17f1 생성 응답 파일 기준 Editor 및 Player 전체 Runtime C# 컴파일에 성공했다.
+• Unity Play Mode에서 RISING 알파벳 획득 효과음이 정상 재생되는 것을 사용자가 확인했다.
+
+남은 확인:
+• 없음.
+
+다음 작업:
+• 재시작 최우선: Editor에서 캐릭터 Loadout 왕복 메뉴를 실행해 결과를 확인한다.
+• Android 기기 연결 시 버전 게이트와 Title `VER 1.0.1` 표시 검증을 재개한다.
+
+________________________________________
+
+## 2026-10-18 출시 로드맵 최종 기준
+
+작업 기준:
+• 12월 Google Play 출시 일정과 범위는 `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`를 최신 기준으로 사용한다.
+• 주간 가용 시간은 9~11시간, 기능 동결은 12월 6일, 프로덕션 제출은 12월 21일이다.
+• UI 리뉴얼과 Ruby/IAP는 이번 출시 범위에서 제외한다.
+
+다음 작업:
+• 1주차 선결 작업으로 Editor 캐릭터 Loadout 왕복 검증과 Android 버전 게이트 검증을 마무리한다.
+• 이어서 레벨 디자인과 BM의 경제·보상 기준안을 11월 1일까지 확정한다.
+
+________________________________________
+
+## 2026-10-18 출시 일정 진척 계측 체계 구축
+
+완료 내용:
+• 모든 향후 작업을 104시간 출시 로드맵과 대조하는 필수 보고 규칙을 `AGENTS.md`에 추가했다.
+• 평일 1시간, 주말 2.5시간을 기준으로 당일·주간·누적 달성률과 일정 대비 차이를 계산하도록 정의했다.
+• 실제 경과시간이 아닌 완료 결과물의 표준 작업량인 `Earned Hours`를 진척 기준으로 채택했다.
+• 작업별 실적 CSV와 PowerShell 자동 계산 도구를 추가했다.
+• 일정 외 작업은 `OUT_OF_SCOPE`로 기록하고 출시 진척률에는 반영하지 않도록 분리했다.
+
+변경된 주요 파일:
+• `AGENTS.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_TRACKER.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Tools/Measure-ReleaseProgress.ps1`
+• `Docs/05_WORK_LOG.md`
+
+검증 결과:
+• 2026-10-18 일정 시작 전 계획 시간이 0시간으로 계산되는 것을 확인했다.
+• 2026-10-19에 STAB 1시간을 제안하면 당일 예상 달성률 100%, STAB 예상 진척률 16.7%로 계산됐다.
+• 시험 실적 1시간 기록 시 당일 달성률 100%, 일정 준수율 100%, 주간 달성률 10%로 집계됐다.
+• 2026-12-31 기준 누적 계획 시간이 전체 예산과 같은 104시간으로 계산됐다.
+
+남은 확인:
+• 2026-10-19 첫 작업부터 실제 완료분을 CSV에 기록하고 완료 보고에 계측 결과를 포함한다.
+
+다음 작업:
+• `STAB` 선결 안정화 작업을 예상 작업량과 당일 목표를 먼저 산출한 뒤 시작한다.

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using LootUp.Core.Audio;
 using LootUp.Core.Characters;
 using LootUp.Core.Game;
 using LootUp.Core.Items;
@@ -386,6 +387,9 @@ namespace LootUp.Core.Rising
 
         private void AcquireLetter(int letterTypeIndex, bool fromDebugInput)
         {
+            // (추가) 일반 아이템과 동일한 획득 효과음을 RISING 알파벳 획득에도 적용한다.
+            GameSfxPlayer.Play(GameSfxId.ItemGain);
+
             int safeLetterTypeIndex = Mathf.Clamp(
                 letterTypeIndex,
                 0,
