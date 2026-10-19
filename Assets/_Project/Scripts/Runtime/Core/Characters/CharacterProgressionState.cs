@@ -128,9 +128,16 @@ namespace LootUp.Core.Characters
 
         public static void SetOwned(CharacterDefinition definition, bool isOwned)
         {
+            TrySetOwned(definition, isOwned);
+        }
+
+        public static bool TrySetOwned(
+            CharacterDefinition definition,
+            bool isOwned)
+        {
             if (definition == null || string.IsNullOrWhiteSpace(definition.CharacterId))
             {
-                return;
+                return false;
             }
 
             Service.GetOrCreate(definition.CharacterId, definition.InitiallyOwned);
@@ -139,7 +146,32 @@ namespace LootUp.Core.Characters
                 isOwned))
             {
                 OwnershipChanged?.Invoke(definition.CharacterId);
+                return true;
             }
+
+            return false;
+        }
+
+        public static bool ApplyAuthoritativeOwnership(
+            CharacterDefinition definition,
+            bool isOwned)
+        {
+            if (definition == null
+                || string.IsNullOrWhiteSpace(definition.CharacterId))
+            {
+                return false;
+            }
+
+            Service.GetOrCreate(definition.CharacterId, definition.InitiallyOwned);
+            if (!CharacterProgressionManager.ApplyAuthoritativeOwnership(
+                definition.CharacterId,
+                isOwned))
+            {
+                return false;
+            }
+
+            OwnershipChanged?.Invoke(definition.CharacterId);
+            return true;
         }
 
         public static bool TrySelectAndEquip(CharacterDefinition definition)

@@ -8,9 +8,9 @@ namespace LootUp.Core.Characters
         private static readonly CharacterProgressionRecord[] Defaults =
         {
             new CharacterProgressionRecord("default", 1, 0, true, false),
-            new CharacterProgressionRecord("alice", 1, 0, true, false),
-            new CharacterProgressionRecord("landy", 1, 0, true, false),
-            new CharacterProgressionRecord("ninja", 1, 0, true, false)
+            new CharacterProgressionRecord("alice", 1, 0, false, false),
+            new CharacterProgressionRecord("landy", 1, 0, false, false),
+            new CharacterProgressionRecord("ninja", 1, 0, false, false)
         };
 
         public static IReadOnlyList<CharacterProgressionRecord> Records =>

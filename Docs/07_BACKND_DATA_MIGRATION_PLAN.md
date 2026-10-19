@@ -357,8 +357,10 @@ BackND로 옮겨야 하는 정보다.
 
 완료: 서버 데이터 공통 계약과 재화 원장 클라이언트, 최초 이전, Pending Queue를 구현했다.
 
-1. 유보: 캐릭터 동일 `requestId`, 선택/Loadout, 계정 A/B와 오프라인 Pending Queue 검증.
-2. 유보: 재화 계정 A/B·타 기기 복구 검증. Ruby는 상품과 용도 확정 전까지 서버 잔액·원장·Pending 기반만 유지한다.
+완료: 캐릭터 동일 `requestId`, 선택/Loadout, 계정 A/B와 오프라인 Pending Queue 핵심 검증.
+
+1. 검증 대기: 미보유 신규 계정에서 GameMoney 캐릭터 구매, 재로그인 복구와 동일 요청 중복 차감 방지를 확인한다.
+2. 유보: 재화 계정 A/B·타 기기 복구 검증. Ruby는 상품과 용도 확정 전까지 서버 잔액·원장·Pending 기반과 비활성 캐릭터 구매 분기만 유지한다.
 3. 출시 전: BackND Function으로 재화/XP 허용량, requestId와 동시 최초 이관을 검증한다.
 4. 출시 전: 모든 Function 쓰기 요청에서 `clientVersion`과 `dataContractVersion`을 검증하고 호환되지 않는 구버전 경로를 폐쇄한다.
 5. Artifact, Character Coin, 강화 및 Pending Event를 이관한다.
@@ -366,7 +368,7 @@ BackND로 옮겨야 하는 정보다.
 7. 광고 제거 및 결제 권리를 영수증 검증 방식으로 전환한다.
 8. 기간 랭킹 보상과 지급 원장을 구현한다.
 9. 신규 캐릭터 추가 전 코드 카탈로그를 ScriptableObject 단일 원본으로 통합한다.
-10. 캐릭터 실계정 검증 후 Manager/BackND 저장소의 추가 클래스 분리를 재평가한다.
+10. 캐릭터 구매 실계정 검증 후 Manager/BackND 저장소의 추가 클래스 분리를 재평가한다.
 
 각 단계는 로컬 데이터 백업, 최초 1회 이전 표시, 서버 저장 성공 확인,
 재로그인 복구, 다른 기기 복구, 중복 요청 검증을 완료한 뒤 다음 단계로

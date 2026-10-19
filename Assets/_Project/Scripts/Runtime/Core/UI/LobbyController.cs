@@ -80,7 +80,11 @@ namespace LootUp.Core.UI
         private Font lobbyFont;
         private CharacterDefinition selectedCharacter;
         private Button startButton;
+        private Text primaryActionText;
+        private Image primaryActionIcon;
         private Coroutine startButtonActivationCoroutine;
+        private bool primaryActionReady;
+        private bool primaryActionInProgress;
         private Text profileText;
         private Text currencyText;
         private Text rubyCurrencyText;
@@ -125,6 +129,7 @@ namespace LootUp.Core.UI
         private void OnEnable()
         {
             CharacterProgressionState.ProgressChanged += HandleCharacterProgressChanged;
+            CharacterProgressionState.OwnershipChanged += HandleCharacterOwnershipChanged;
             UserProfileManager.ProfileChanged += HandleUserProfileChanged;
             AuthenticationManager.AuthenticationStateChanged += HandleAuthenticationStateChanged;
             ItemCollectionManager.CollectionChanged += HandleCollectionChanged;
@@ -138,6 +143,7 @@ namespace LootUp.Core.UI
         private void OnDisable()
         {
             CharacterProgressionState.ProgressChanged -= HandleCharacterProgressChanged;
+            CharacterProgressionState.OwnershipChanged -= HandleCharacterOwnershipChanged;
             UserProfileManager.ProfileChanged -= HandleUserProfileChanged;
             AuthenticationManager.AuthenticationStateChanged -= HandleAuthenticationStateChanged;
             ItemCollectionManager.CollectionChanged -= HandleCollectionChanged;
@@ -152,6 +158,9 @@ namespace LootUp.Core.UI
             {
                 startButton.interactable = false;
             }
+
+            primaryActionReady = false;
+            primaryActionInProgress = false;
         }
 
         private void OnDestroy()
@@ -187,7 +196,10 @@ namespace LootUp.Core.UI
 
         public void StartGame()
         {
-            if (startButton == null || !startButton.interactable)
+            if (startButton == null
+                || !startButton.interactable
+                || selectedCharacter == null
+                || !CharacterProgressionState.IsOwned(selectedCharacter))
             {
                 return;
             }
@@ -202,6 +214,49 @@ namespace LootUp.Core.UI
             }
 
             SceneManager.LoadScene(SceneFlowManager.InGameSceneName, LoadSceneMode.Single);
+        }
+
+        private async void HandlePrimaryAction()
+        {
+            if (!primaryActionReady
+                || primaryActionInProgress
+                || selectedCharacter == null)
+            {
+                return;
+            }
+
+            if (CharacterProgressionState.IsOwned(selectedCharacter))
+            {
+                StartGame();
+                return;
+            }
+
+            if (!CharacterAcquisitionManager.CanPurchase(
+                selectedCharacter))
+            {
+                RefreshPrimaryAction();
+                return;
+            }
+
+            primaryActionInProgress = true;
+            RefreshPrimaryAction();
+            CharacterAcquisitionResult result =
+                await CharacterAcquisitionManager.PurchaseAsync(
+                    selectedCharacter);
+            if (this == null)
+            {
+                return;
+            }
+
+            primaryActionInProgress = false;
+            if (!result.Completed)
+            {
+                Debug.LogWarning(
+                    $"Character purchase failed: {result.State}, {result.Message}",
+                    this);
+            }
+
+            RefreshLobbyData();
         }
 
         private void BuildLobby()
@@ -252,17 +307,18 @@ namespace LootUp.Core.UI
 
             BuildRecordStrip(root);
             BuildCharacterStage(root);
-            startButton = CreateButton(root, "StartButton", "START", new Vector2(0.055f, 0.025f), new Vector2(0.945f, 0.137f), sampleYellow, primaryTextColor, StartGame, false);
+            startButton = CreateButton(root, "StartButton", "START", new Vector2(0.055f, 0.025f), new Vector2(0.945f, 0.137f), sampleYellow, primaryTextColor, HandlePrimaryAction, false);
             RectTransform startRect = startButton.transform as RectTransform;
             Transform labelTransform = startRect != null ? startRect.Find("StartButtonText") : null;
             if (labelTransform is RectTransform labelRect)
             {
                 ConfigureRect(labelRect, new Vector2(0.24f, 0f), new Vector2(0.95f, 1f));
+                primaryActionText = labelRect.GetComponent<Text>();
             }
 
-            Image playIcon = CreateImage(startRect, "PlayIcon", new Vector2(0.08f, 0.2f), new Vector2(0.23f, 0.8f), Color.white);
-            playIcon.sprite = GetPlaySprite();
-            playIcon.preserveAspect = true;
+            primaryActionIcon = CreateImage(startRect, "PlayIcon", new Vector2(0.08f, 0.2f), new Vector2(0.23f, 0.8f), Color.white);
+            primaryActionIcon.sprite = GetPlaySprite();
+            primaryActionIcon.preserveAspect = true;
         }
 
         private void ScheduleStartButtonActivation()
@@ -279,6 +335,7 @@ namespace LootUp.Core.UI
             }
 
             startButton.interactable = false;
+            primaryActionReady = false;
             startButtonActivationCoroutine = StartCoroutine(ActivateStartButtonWhenReady());
         }
 
@@ -292,7 +349,8 @@ namespace LootUp.Core.UI
 
             if (startButton != null)
             {
-                startButton.interactable = true;
+                primaryActionReady = true;
+                RefreshPrimaryAction();
             }
 
             startButtonActivationCoroutine = null;
@@ -348,7 +406,7 @@ namespace LootUp.Core.UI
             selectedCharacterPortraitImage = CreateImage(stage, "SelectedCharacterPortrait", new Vector2(0.31f, 0.646f), new Vector2(0.69f, 0.916f), Color.white);
             selectedCharacterPortraitImage.preserveAspect = true;
 
-            bool canNavigate = GetAvailableCharacterCount() > 1;
+            bool canNavigate = GetDisplayCharacterCount() > 1;
             CreateIconButton(stage, "PreviousCharacterButton", GetArrowSprite(false), new Vector2(0.12f, 0.711f), new Vector2(0.24f, 0.851f), SelectPreviousCharacter, canNavigate, "Previous Character");
             CreateIconButton(stage, "NextCharacterButton", GetArrowSprite(true), new Vector2(0.76f, 0.711f), new Vector2(0.88f, 0.851f), SelectNextCharacter, canNavigate, "Next Character");
 
@@ -476,10 +534,15 @@ namespace LootUp.Core.UI
         private void RefreshSelectedCharacterInfo()
         {
             CharacterProgressionSnapshot progression = CharacterProgressionState.GetSnapshot(selectedCharacter);
+            bool isOwned = CharacterProgressionState.IsOwned(selectedCharacter);
 
             if (selectedCharacterLevelText != null)
             {
-                selectedCharacterLevelText.text = selectedCharacter != null ? $"Lv. {progression.Level}" : "Lv. -";
+                selectedCharacterLevelText.text = selectedCharacter == null
+                    ? "Lv. -"
+                    : isOwned
+                        ? $"Lv. {progression.Level}"
+                        : "LOCKED";
             }
 
             if (selectedCharacterNameText != null)
@@ -507,26 +570,140 @@ namespace LootUp.Core.UI
 
             if (selectedCharacterExperienceText != null)
             {
-                selectedCharacterExperienceText.text = progression.IsMaxLevel
-                    ? "MAX LEVEL"
-                    : $"XP  {progression.CurrentExperience:N0} / {progression.RequiredExperience:N0}";
+                selectedCharacterExperienceText.text = !isOwned
+                    ? GetAcquisitionStatusLabel(selectedCharacter)
+                    : progression.IsMaxLevel
+                        ? "MAX LEVEL"
+                        : $"XP  {progression.CurrentExperience:N0} / {progression.RequiredExperience:N0}";
             }
 
             if (selectedCharacterExperienceFillRect != null)
             {
                 // (변경) Sprite 유무와 관계없이 현재 XP 비율만큼 게이지 폭을 직접 조절한다.
-                float normalizedExperience = Mathf.Clamp01(progression.NormalizedExperience);
+                float normalizedExperience = isOwned
+                    ? Mathf.Clamp01(progression.NormalizedExperience)
+                    : 0f;
                 selectedCharacterExperienceFillRect.anchorMax = new Vector2(
                     Mathf.Lerp(0.006f, 0.994f, normalizedExperience),
                     0.88f);
             }
 
             RefreshSelectedCharacterPortrait();
+            RefreshPrimaryAction();
+        }
+
+        private void RefreshPrimaryAction()
+        {
+            if (startButton == null || primaryActionText == null)
+            {
+                return;
+            }
+
+            if (primaryActionInProgress)
+            {
+                primaryActionText.text = "PROCESSING";
+                startButton.interactable = false;
+                if (primaryActionIcon != null)
+                {
+                    primaryActionIcon.enabled = false;
+                }
+
+                return;
+            }
+
+            if (selectedCharacter == null)
+            {
+                primaryActionText.text = "NO CHARACTER";
+                startButton.interactable = false;
+                if (primaryActionIcon != null)
+                {
+                    primaryActionIcon.enabled = false;
+                }
+
+                return;
+            }
+
+            bool isOwned = CharacterProgressionState.IsOwned(selectedCharacter);
+            if (primaryActionIcon != null)
+            {
+                primaryActionIcon.enabled = isOwned;
+            }
+
+            if (isOwned)
+            {
+                primaryActionText.text = "START";
+                startButton.interactable = primaryActionReady;
+                return;
+            }
+
+            CharacterAcquisitionOption option =
+                selectedCharacter.GetPrimaryAcquisitionOption();
+            primaryActionText.text = GetAcquisitionButtonLabel(option);
+            startButton.interactable = primaryActionReady
+                && CharacterAcquisitionManager.CanPurchase(
+                    selectedCharacter);
+        }
+
+        private static string GetAcquisitionButtonLabel(
+            CharacterAcquisitionOption option)
+        {
+            if (option == null)
+            {
+                return "LOCKED";
+            }
+
+            if (!option.Enabled)
+            {
+                return option.AcquisitionType switch
+                {
+                    CharacterAcquisitionType.RewardedAd =>
+                        "AD UNLOCK COMING SOON",
+                    CharacterAcquisitionType.Ruby =>
+                        "RUBY UNLOCK COMING SOON",
+                    _ => "UNLOCK COMING SOON"
+                };
+            }
+
+            return option.AcquisitionType switch
+            {
+                CharacterAcquisitionType.GameMoney =>
+                    $"UNLOCK  {option.Amount:N0} COIN",
+                CharacterAcquisitionType.Ruby =>
+                    $"UNLOCK  {option.Amount:N0} RUBY",
+                CharacterAcquisitionType.RewardedAd =>
+                    $"WATCH AD  0 / {option.Amount:N0}",
+                _ => "LOCKED"
+            };
+        }
+
+        private static string GetAcquisitionStatusLabel(
+            CharacterDefinition definition)
+        {
+            CharacterAcquisitionOption option =
+                definition != null
+                    ? definition.GetPrimaryAcquisitionOption()
+                    : null;
+            if (option == null)
+            {
+                return "ACQUISITION UNAVAILABLE";
+            }
+
+            string suffix = option.Enabled ? string.Empty : "  COMING SOON";
+            return option.AcquisitionType switch
+            {
+                CharacterAcquisitionType.GameMoney =>
+                    $"GAME MONEY  {option.Amount:N0}{suffix}",
+                CharacterAcquisitionType.Ruby =>
+                    $"RUBY  {option.Amount:N0}{suffix}",
+                CharacterAcquisitionType.RewardedAd =>
+                    $"REWARDED AD  {option.Amount:N0} TIMES{suffix}",
+                _ => "ACQUISITION UNAVAILABLE"
+            };
         }
 
         private string GetSelectedCharacterPositionLabel()
         {
-            int total = GetAvailableCharacterCount();
+            int total = GetDisplayCharacterCount();
             if (selectedCharacter == null || total <= 0)
             {
                 return "0 / 0";
@@ -535,7 +712,7 @@ namespace LootUp.Core.UI
             int visibleIndex = 0;
             for (int i = 0; i < availableCharacters.Length; i++)
             {
-                if (availableCharacters[i] == null || !CharacterProgressionState.IsOwned(availableCharacters[i]))
+                if (availableCharacters[i] == null)
                 {
                     continue;
                 }
@@ -600,6 +777,10 @@ namespace LootUp.Core.UI
             Sprite portrait = selectedCharacter != null ? selectedCharacter.PortraitSprite : null;
             selectedCharacterPortraitImage.sprite = portrait;
             selectedCharacterPortraitImage.enabled = portrait != null;
+            selectedCharacterPortraitImage.color =
+                CharacterProgressionState.IsOwned(selectedCharacter)
+                    ? Color.white
+                    : new Color(0.48f, 0.5f, 0.56f, 0.86f);
         }
 
         private void RefreshBestCharacterPortrait()
@@ -757,8 +938,7 @@ namespace LootUp.Core.UI
 
                 CharacterDefinition candidate = availableCharacters[index];
                 if (candidate != null
-                    && candidate != selectedCharacter
-                    && CharacterProgressionState.IsOwned(candidate))
+                    && candidate != selectedCharacter)
                 {
                     SelectCharacter(candidate);
                     return;
@@ -768,13 +948,17 @@ namespace LootUp.Core.UI
 
         private void SelectCharacter(CharacterDefinition characterDefinition)
         {
-            if (characterDefinition == null || !CharacterProgressionState.IsOwned(characterDefinition))
+            if (characterDefinition == null)
             {
                 return;
             }
 
             selectedCharacter = characterDefinition;
-            CharacterSelectionState.Select(selectedCharacter);
+            if (CharacterProgressionState.IsOwned(selectedCharacter))
+            {
+                CharacterSelectionState.Select(selectedCharacter);
+            }
+
             RefreshSelectedCharacterInfo();
             Debug.Log($"Lobby character selected: {selectedCharacter.DisplayName} ({selectedCharacter.CharacterId})", this);
         }
@@ -813,7 +997,7 @@ namespace LootUp.Core.UI
             return null;
         }
 
-        private int GetAvailableCharacterCount()
+        private int GetDisplayCharacterCount()
         {
             if (availableCharacters == null)
             {
@@ -823,7 +1007,7 @@ namespace LootUp.Core.UI
             int count = 0;
             for (int i = 0; i < availableCharacters.Length; i++)
             {
-                if (availableCharacters[i] != null && CharacterProgressionState.IsOwned(availableCharacters[i]))
+                if (availableCharacters[i] != null)
                 {
                     count++;
                 }
@@ -838,6 +1022,22 @@ namespace LootUp.Core.UI
             {
                 RefreshSelectedCharacterInfo();
             }
+        }
+
+        private void HandleCharacterOwnershipChanged(string characterId)
+        {
+            if (selectedCharacter == null
+                || selectedCharacter.CharacterId != characterId)
+            {
+                return;
+            }
+
+            if (CharacterProgressionState.IsOwned(selectedCharacter))
+            {
+                CharacterSelectionState.Select(selectedCharacter);
+            }
+
+            RefreshLobbyData();
         }
 
         private void HandleUserProfileChanged()

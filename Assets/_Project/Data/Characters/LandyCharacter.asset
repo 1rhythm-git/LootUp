@@ -50,7 +50,11 @@ MonoBehaviour:
   maxLife: 4
   instantItemAcquireChance: 0
   itemChance: 0.18
-  initiallyOwned: 1
+  initiallyOwned: 0
+  acquisitionOptions:
+  - acquisitionType: 0
+    enabled: 1
+    amount: 2500
   requiredExperienceByLevel:
   - 100
   - 150

@@ -6254,3 +6254,298 @@ ________________________________________
 
 작업 기준:
 • 계정 A/B 분리, Editor·APK 복구와 BackND 서버 원장 확인을 완료해 `STAB` 획득 작업량 1.0시간을 `Done`으로 기록한다.
+
+________________________________________
+
+## 2026-10-19 레벨 디자인 및 BM 기준안 V0.1 작성
+
+완료 내용:
+• 현재 10층 페이지 난이도, Enemy 수·속도, 위험 라인과 RISING 확률을 실제 코드 기준으로 정리했다.
+• GameMoney, CharacterCoin과 Ruby의 출시 V1 역할 및 주간 수급 목표 초안을 수립했다.
+• 캐릭터 해금 가격, 단일 5단계 강화, 일일·주간 미션과 상점 V1의 초안 수치를 제시했다.
+• 우편함을 운영·보상 전달 수단으로 한정하고 후속 시스템이 공유할 `RewardBundle` 계약을 정의했다.
+• Lobby 배너, 런당 1회 보상형 부활, 전면 광고 제외와 광고 제거 상품의 조건부 유보 정책을 정리했다.
+
+변경된 주요 파일:
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+
+검증 결과:
+• `RunRewardSettings`, `TestEnemySpawner`, `RisingSystem`, `Items.csv`와 `CharacterUpgradeDefinition`의 현재 기본값을 초안 기준선과 대조했다.
+• Ruby 내부 기반 유지, GameMoney 중심 상점과 광고 제거 조건부 유보가 출시 로드맵과 충돌하지 않음을 확인했다.
+• 후속 강화·미션·우편함·상점 구현 전에 승인해야 할 6개 항목을 분리했다.
+
+남은 확인:
+• 신규 계정의 기본 보유 캐릭터 정책과 캐릭터 해금 가격을 승인해야 한다.
+• Play Mode 샘플 런 5회 이상으로 층·시간·GameMoney 실제 분포를 측정해야 한다.
+• 광고 제거 IAP의 최초 출시 포함 여부는 영수증 서버 검증 일정을 확인한 뒤 확정한다.
+
+다음 작업:
+• V0.1의 6개 승인 항목을 검토하고 수정 의견을 반영한다.
+• 이후 샘플 런 측정표와 10층 단위 난이도·보상 곡선을 확정한다.
+
+작업 기준:
+• 출시 로드맵 `DESIGN`의 1차 기준안 작성 완료분으로 획득 작업량 1.0시간을 `Done`으로 기록한다.
+
+________________________________________
+
+## 2026-10-19 Ruby 소비 설계 초안 추가
+
+완료 내용:
+• Ruby 전용 캐릭터, GameMoney 교환, CharacterCoin 확정 구매·뽑기와 XP 훈련권을 소비 후보로 구체화했다.
+• Ruby 전용 캐릭터는 무료 캐릭터보다 강하지 않은 선택형 성능, 꾸미기 상품은 능력치 없는 영구 보유를 기준으로 했다.
+• CharacterCoin 뽑기는 확정 구매를 우선하고 확률 공개, 10회 천장과 중복 보상 준비 전에는 출시하지 않도록 제한했다.
+• XP 직접 판매는 캐릭터별 일 1회, 다음 레벨 필요 XP 20%의 훈련권 형태로 제한했다.
+• 광고 제거는 Ruby 소비가 아닌 복원 가능한 Google Play 비소모성 직접 구매 상품으로 분리했다.
+• 구매 Ruby와 보너스 Ruby의 원장 출처 분리, 보너스 우선 소비와 서버 원자 처리 원칙을 추가했다.
+
+변경된 주요 파일:
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+
+검증 결과:
+• 기존 Ruby 내부 잔액·원장 기반과 충돌하지 않으며 최초 출시 숨김 정책을 유지했다.
+• Artifact 직접 판매, Ruby 부활과 기록 구매처럼 랭킹 공정성을 훼손할 후보는 제외했다.
+• 전용 캐릭터·꾸미기·교환·확률형·성장 단축을 우선순위별로 분리했다.
+
+남은 확인:
+• 첫 Ruby 업데이트의 실제 소비처 범위와 가격을 승인해야 한다.
+• 확률형 상품을 사용할 경우 출시 국가·연령·플랫폼 정책과 확률 표시 요건을 별도 확인해야 한다.
+• Google Play 영수증 검증, 환불·회수와 구매 복원 정책을 구현 전에 확정해야 한다.
+
+다음 작업:
+• BM V0.1의 전체 승인 항목 9개를 검토한다.
+• 승인 후 Play Mode 샘플 런 측정으로 GameMoney·CharacterCoin·XP 교환 수치를 보정한다.
+
+작업 기준:
+• Ruby 소비처와 보호 정책 초안 완료분으로 `DESIGN` 획득 작업량 0.5시간을 `Done`으로 기록한다.
+
+________________________________________
+
+## 2026-10-19 레벨 디자인 난도 파형 V0.2
+
+완료 내용:
+• 현재 `TestEnemySpawner`의 10층 단위 Enemy, Red Line, 속도 증가 구조를 재확인했다.
+• 테트리스의 10라인 단위 레벨 상승, 지속 속도 증가와 일시적 완급 조절 사례를 조사했다.
+• 30층 상승 후 10층 회복하는 난도 파형을 `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`에 반영했다.
+• 1~130F의 Enemy 수, Red Line 수, 속도 보정과 지원 아이템 가중치 초안을 작성했다.
+
+변경된 주요 파일:
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+
+검증 결과:
+• 현재 코드는 Enemy `4 -> 5 -> 6 -> 7`, Red Line `0 -> 1 -> 1 -> 2 -> ... -> 4`, 속도 `10층마다 +18`로 계속 상승하며 회복 구간이 없음을 확인했다.
+• 제안안은 Enemy와 Red Line을 회복 구간에서 낮추되 다음 주기의 기준 난도는 이전보다 높게 유지한다.
+
+남은 이슈:
+• `DifficultyBandDefinition` 기반 데이터 구조 구현과 Inspector 수치 적용이 필요하다.
+• 에디터 및 APK에서 피크/회복 구간 체감 검증이 필요하다.
+• 수치는 V0.2 초안이며 실제 플레이 결과에 따라 조정한다.
+
+다음 작업:
+• `DifficultyBandDefinition` 구현 및 `TestEnemySpawner` 연동을 진행한다.
+• 이후 31~50F 피크/회복 구간을 에디터에서 검증한다.
+
+작업 기준:
+• 테트리스 참고 조사와 10층 단위 난도 파형 설계 완료분으로 `DESIGN` 획득 작업량 1.0시간을 `Done`으로 기록한다.
+
+________________________________________
+
+## 2026-10-19 레벨 디자인 난도 그래프 추가
+
+완료 내용:
+• 1~130F 제안 난도를 비교하는 상대 난도 지수 그래프를 제작했다.
+• Enemy 40%, Red Line 30%, 속도 30%의 비교용 가중치와 산출값을 문서에 명시했다.
+• 피크 지점과 41~50F, 81~90F, 121~130F 회복 구간을 색상으로 구분했다.
+
+변경된 주요 파일:
+• `Docs/Images/level-difficulty-wave-v02.svg`
+• `Docs/Images/level-difficulty-wave-v02.png`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+
+검증 결과:
+• 회복 지수는 `44 -> 64 -> 79`로 상승해 단기 완화와 장기 난도 상승이 동시에 표현된다.
+• 그래프에 사용한 13개 지수와 레벨 디자인 표의 Enemy, Red Line, 속도 수치를 대조하고 1200x520 PNG 렌더링을 확인했다.
+
+남은 이슈:
+• 그래프 지수는 설계 비교용이며 실제 체감 난도는 에디터와 APK 플레이 결과로 보정해야 한다.
+
+다음 작업:
+• `DifficultyBandDefinition` 구현 및 `TestEnemySpawner` 연동을 진행한다.
+
+작업 기준:
+• 난도 그래프 제작과 문서 반영 완료분으로 `DESIGN` 획득 작업량 0.5시간을 `Done`으로 기록한다.
+
+________________________________________
+
+## 2026-10-19 캐릭터 구매 타입 개발 적용 여부 점검
+
+완료 내용:
+• 캐릭터 소유권, Lobby 선택 제한, 재화 차감과 캐릭터 에셋 설정을 대조했다.
+• GameMoney 및 Ruby 캐릭터 구매 타입은 기획 초안에만 있으며 런타임 구매 흐름에는 아직 적용되지 않았음을 확인했다.
+
+검증 결과:
+• 네 캐릭터 에셋이 모두 `initiallyOwned: 1`이므로 신규 데이터에서도 전원 기본 보유 상태다.
+• `IsOwned`, `SetOwnershipAsync`와 Pending Queue를 통한 소유권 저장·동기화 기반은 구현돼 있다.
+• Lobby는 미보유 캐릭터를 목록과 선택 대상에서 제외하지만 가격, 잠금 안내, 구매 버튼은 제공하지 않는다.
+• `SpendCurrencyAsync`는 구현돼 있으나 캐릭터 소유권 부여와 원자적으로 연결된 구매 서비스나 구매 타입·가격 데이터는 없다.
+• `CharacterUpgradeDefinition.TryPurchase`는 캐릭터 해금 구매가 아니라 CharacterCoin 강화 구매다.
+
+남은 이슈:
+• 캐릭터별 획득 타입, 가격, 판매 상태 데이터와 서버 검증 구매 트랜잭션을 설계·구현해야 한다.
+• 기본 캐릭터만 `initiallyOwned`로 둘지 기존 계정 보유권을 어떻게 마이그레이션할지 확정해야 한다.
+
+다음 작업:
+• 캐릭터 구매 타입 및 해금 데이터 구조를 설계한 뒤 상점 구현 범위와 연결한다.
+
+작업 기준:
+• 현재 개발 적용 여부 코드 점검 완료분으로 `DESIGN` 획득 작업량 0.25시간을 `Done`으로 기록한다.
+
+________________________________________
+
+## 2026-10-19 캐릭터 획득 타입 최소 기반 구성 후 보류
+
+완료 내용:
+• 캐릭터 획득 타입을 `GameMoney`, `RewardedAd`, `Ruby` 3종으로 정의했다.
+• `CharacterDefinition`에 획득 타입, 활성 여부, 가격 또는 광고 누적 횟수를 저장할 수 있는 직렬화 필드를 추가했다.
+• 기존 플레이 흐름을 유지하도록 모든 캐릭터의 기본 보유 상태를 유지하고 획득 옵션은 비활성 상태로 설정했다.
+• 토큰과 작업 범위를 고려해 서버 거래, 광고 누적, Lobby 구매 UI는 구현하지 않고 보류했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterAcquisitionModels.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterDefinition.cs`
+• `Assets/_Project/Data/Characters/*Character.asset`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+
+검증 결과:
+• 획득 옵션이 모두 비활성이고 네 캐릭터가 계속 기본 보유이므로 현재 Lobby 선택 및 인게임 진입 동작에는 변화가 없다.
+• 실행 서비스와 UI 연결 코드는 남기지 않아 미완성 거래가 호출될 경로가 없다.
+
+남은 이슈:
+• `requestId` 기반 재화 차감과 소유권 부여의 서버 원자 처리 구현이 필요하다.
+• 광고 SDK 선정 후 광고 누적 진척도 저장과 중복 보상 방지를 구현해야 한다.
+• 기본 보유 정책과 기존 계정 마이그레이션 승인 후 Lobby 잠금·구매 UI를 연결해야 한다.
+
+다음 작업:
+• BM 가격과 캐릭터별 획득 정책을 승인한 뒤 캐릭터 구매 실행 계층 구현을 재개한다.
+
+작업 기준:
+• 예정 2.0시간 중 안전한 데이터 기반 구성 완료분 0.5시간만 `Partial` 획득 작업량으로 기록한다.
+
+________________________________________
+
+## 2026-10-19 캐릭터 획득 실행 계층 재개 구현
+
+완료 내용:
+• GameMoney 및 Ruby 캐릭터 구매 요청 모델과 실행 관리자를 구현했다.
+• BackND의 재화 프로필, 재화 원장, 캐릭터 진행도 보유권을 `TransactionWriteV2` 한 번으로 갱신하도록 구성했다.
+• 캐릭터별 고정 `requestId`를 사용해 응답 유실 후 재시도에서도 중복 차감되지 않도록 했다.
+• Lobby에서 잠금 캐릭터 탐색, 잠금 표시, 가격 표시, 잔액 조건에 따른 구매 버튼과 구매 후 즉시 선택을 연결했다.
+• 신규 계정은 Agent X만 기본 보유하고 Landy 2,500 GameMoney, Ninja 5,000 GameMoney 구매를 활성화했다.
+• Alice 광고 5회와 Ninja 1,200 Ruby 경로는 데이터와 실행 분기만 유지하고 실제 옵션은 비활성화했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterAcquisitionModels.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/ICharacterAcquisitionService.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterAcquisitionManager.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/BackndCharacterAcquisitionService.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterProgressionState.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterProgressionManager.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Authentication/AuthenticationManager.cs`
+• `Assets/_Project/Scripts/Runtime/Core/UI/LobbyController.cs`
+• `Assets/_Project/Data/Characters/*Character.asset`
+
+검증 결과:
+• Unity 6.3.17f1 배치 컴파일을 실행해 C# 컴파일 오류 없이 종료 코드 0을 확인했다.
+• GameMoney 및 Ruby 구매는 재화 차감과 보유권 부여가 같은 BackND 트랜잭션에 포함된다.
+• 서버 구매 성공 시 로컬 잔액과 보유권을 권위 데이터로 반영하고 이전 Pending 소유권 요청을 제거한다.
+• 기존 계정은 BackND에 저장된 보유권을 우선하므로 현재 보유 캐릭터가 회수되지 않는다.
+
+남은 확인:
+• 미보유 테스트 계정에서 Landy 구매 후 GameMoney 2,500 차감과 Lobby 즉시 해금을 확인해야 한다.
+• 재로그인 후 Landy 보유권과 차감 잔액이 유지되는지 확인해야 한다.
+• 동일 구매 재요청 시 추가 차감이 없는지 BackND 원장 `requestId`를 확인해야 한다.
+• RewardedAd는 광고 SDK 선정 후 시청 완료 콜백과 서버 누적 진척도를 별도 구현해야 한다.
+
+다음 작업:
+• 캐릭터 구매 수동 왕복 검증 완료 후 현재 SHOP 작업을 `Done`으로 전환한다.
+
+작업 기준:
+• 구현 및 컴파일 검증 완료분을 반영해 기존 2.0시간 작업의 획득 작업량을 1.5시간 `Partial`로 갱신한다.
+
+________________________________________
+
+## 2026-10-19 기획·레벨 디자인·BM·출시 일정 동기화
+
+완료 내용:
+• 마스터 기획서에 30층 상승 후 10층 회복하는 난도 V0.2와 캐릭터 획득 정책을 반영했다.
+• 신규 계정 Agent X 기본 보유, Landy 2,500 GameMoney, Ninja 5,000 GameMoney 활성 정책을 마스터 기획과 BM 초안에 일치시켰다.
+• Alice 광고 5회와 Ninja 1,200 Ruby 경로는 구현 기반만 유지하고 비활성 상태임을 명시했다.
+• BackND 재화 프로필·원장·캐릭터 보유권 단일 트랜잭션과 기존 계정 보유권 보존 정책을 문서화했다.
+• 레벨 디자인 및 BM 14시간 예산을 완료 3.75시간과 잔여 10.25시간으로 나누고 11월 1일 G1 동결까지 날짜별로 배치했다.
+
+변경된 주요 파일:
+• `Docs/00_MASTER_PROJECT_BRIEF.md`
+• `Docs/04_CODEX_EXECUTION_PLAN.md`
+• `Docs/06_BACKND_INTEGRATION_PLAN.md`
+• `Docs/07_BACKND_DATA_MIGRATION_PLAN.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/05_WORK_LOG.md`
+
+검증 결과:
+• BM 초안에서 이미 확정·구현된 신규 계정 정책을 미결정으로 표시하던 문장을 제거했다.
+• 레벨 디자인 및 BM 세부 일정의 완료 3.75시간과 잔여 10.25시간 합계가 예산 14시간과 일치한다.
+• 1주차는 현재 7.25시간에 DESIGN 3.25시간과 SHOP 검증 0.5시간을 더한 최대 11.0시간, 2주차는 DESIGN 7.0시간으로 G1 기획 동결 전 잔여 작업을 배치했다.
+
+남은 확인:
+• 캐릭터 구매 실제 계정 왕복 검증 0.5시간은 `SHOP`에 남아 있다.
+• `DifficultyBandDefinition` 구현과 Editor·APK 샘플 런 결과에 따라 난도 V0.2 수치를 조정해야 한다.
+• Alice 광고 획득 경로는 광고 SDK와 서버 누적 진척도 설계 후 확정한다.
+
+다음 작업:
+• 미보유 테스트 계정으로 Landy 구매·재로그인·중복 차감 검증을 완료한다.
+• 이후 일정에 따라 `DifficultyBandDefinition` 구현을 시작한다.
+
+작업 기준:
+• 마스터 기획, 레벨/BM 초안과 출시 일정 동기화 완료분으로 `DESIGN` 획득 작업량 0.5시간을 `Done`으로 기록한다.
+
+________________________________________
+
+## 2026-10-19 출시 로드맵 시각화 추가
+
+완료 내용:
+• 전체 출시, 레벨 디자인·BM, 상점의 최신 진척률을 비교하는 게이지를 추가했다.
+• 2026-10-19부터 12월 31일까지 11주 작업 흐름과 `G0`~`G7` 출시 게이트를 같은 시간축에 배치했다.
+• 현재 주차와 다음 집중 작업을 표시하고 로드맵 본문에 두 시각화 자료를 연결했다.
+• 시각화 작업 0.5시간을 `DESIGN` 완료분으로 반영하고 1주차 계획이 최대 11시간을 넘지 않도록 샘플 런 배정을 1.25시간으로 조정했다.
+
+변경된 주요 파일:
+• `Docs/Images/google-play-progress-gauges.svg`
+• `Docs/Images/google-play-roadmap-timeline.svg`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/05_WORK_LOG.md`
+
+검증 결과:
+• 두 SVG를 XML로 파싱해 문법 오류가 없음을 확인했다.
+• 진척 계산 결과는 당일 7.75/1시간 775%, 주간 7.75/10시간 77.5%, 누적 7.75/104시간 7.5%다.
+• `DESIGN`은 4.25/14시간 30.4%, `SHOP`은 1.5/10시간 15.0%로 문서와 원장 수치가 일치한다.
+
+남은 확인:
+• 일정이나 실적 원장이 변경될 때 SVG의 수치와 일정 막대도 함께 갱신해야 한다.
+• 캐릭터 구매 실제 계정 왕복 검증 0.5시간은 계속 `SHOP` 잔여 작업으로 유지한다.
+
+다음 작업:
+• 미보유 테스트 계정으로 Landy 구매·재로그인·중복 차감 검증을 완료한다.
+• 이후 `DifficultyBandDefinition` 및 10층 난도 데이터 구현을 진행한다.
+
+작업 기준:
+• 출시 로드맵 게이지와 11주 일정표 작성 완료분으로 `DESIGN` 획득 작업량 0.5시간을 `Done`으로 기록한다.

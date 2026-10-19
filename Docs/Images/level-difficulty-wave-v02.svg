@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">LootUp 10층 단위 상대 난도 파형 V0.2</title>
+  <desc id="desc">1층부터 130층까지 상승, 피크, 회복이 반복되는 상대 난도 지수 그래프</desc>
+  <rect width="1200" height="520" fill="#ffffff"/>
+  <text x="600" y="34" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#172033">LootUp 10층 단위 상대 난도 파형 V0.2</text>
+  <text x="600" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#596579">Enemy 40% + Red Line 30% + Speed 30% (1~130F 제안 범위 정규화)</text>
+
+  <rect x="396" y="78" width="88" height="342" fill="#dff5e7"/>
+  <rect x="746" y="78" width="88" height="342" fill="#dff5e7"/>
+  <rect x="1096" y="78" width="88" height="342" fill="#dff5e7"/>
+
+  <g stroke="#d9dee8" stroke-width="1">
+    <line x1="90" y1="420" x2="1140" y2="420"/>
+    <line x1="90" y1="337.5" x2="1140" y2="337.5"/>
+    <line x1="90" y1="255" x2="1140" y2="255"/>
+    <line x1="90" y1="172.5" x2="1140" y2="172.5"/>
+    <line x1="90" y1="90" x2="1140" y2="90"/>
+  </g>
+
+  <g font-family="Arial, sans-serif" font-size="12" fill="#596579" text-anchor="end">
+    <text x="78" y="424">0</text>
+    <text x="78" y="341.5">25</text>
+    <text x="78" y="259">50</text>
+    <text x="78" y="176.5">75</text>
+    <text x="78" y="94">100</text>
+  </g>
+  <text x="24" y="260" transform="rotate(-90 24 260)" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#596579">상대 난도 지수</text>
+
+  <line x1="90" y1="90" x2="90" y2="420" stroke="#7b8494" stroke-width="1.5"/>
+  <line x1="90" y1="420" x2="1140" y2="420" stroke="#7b8494" stroke-width="1.5"/>
+
+  <path d="M 90 344.1 L 177.5 288 L 265 258.3 L 352.5 202.2 L 440 274.8 L 527.5 215.4 L 615 159.3 L 702.5 119.7 L 790 208.8 L 877.5 139.5 L 965 103.2 L 1052.5 90 L 1140 159.3"
+        fill="none" stroke="#2367d1" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <g fill="#2367d1" stroke="#ffffff" stroke-width="2">
+    <circle cx="90" cy="344.1" r="6"/>
+    <circle cx="177.5" cy="288" r="6"/>
+    <circle cx="265" cy="258.3" r="6"/>
+    <circle cx="527.5" cy="215.4" r="6"/>
+    <circle cx="615" cy="159.3" r="6"/>
+    <circle cx="877.5" cy="139.5" r="6"/>
+    <circle cx="965" cy="103.2" r="6"/>
+  </g>
+  <g fill="#d94c4c" stroke="#ffffff" stroke-width="2">
+    <circle cx="352.5" cy="202.2" r="7"/>
+    <circle cx="702.5" cy="119.7" r="7"/>
+    <circle cx="1052.5" cy="90" r="7"/>
+  </g>
+  <g fill="#2f9d5d" stroke="#ffffff" stroke-width="2">
+    <circle cx="440" cy="274.8" r="7"/>
+    <circle cx="790" cy="208.8" r="7"/>
+    <circle cx="1140" cy="159.3" r="7"/>
+  </g>
+
+  <g font-family="Arial, sans-serif" font-size="11" fill="#394458" text-anchor="middle">
+    <text x="90" y="444">1~10</text>
+    <text x="177.5" y="444">11~20</text>
+    <text x="265" y="444">21~30</text>
+    <text x="352.5" y="444">31~40</text>
+    <text x="440" y="444">41~50</text>
+    <text x="527.5" y="444">51~60</text>
+    <text x="615" y="444">61~70</text>
+    <text x="702.5" y="444">71~80</text>
+    <text x="790" y="444">81~90</text>
+    <text x="877.5" y="444">91~100</text>
+    <text x="965" y="444">101~110</text>
+    <text x="1052.5" y="444">111~120</text>
+    <text x="1140" y="444">121~130</text>
+  </g>
+  <text x="615" y="472" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#596579">층 구간 (10F 단위)</text>
+
+  <g font-family="Arial, sans-serif" font-size="12" fill="#394458">
+    <line x1="375" y1="498" x2="407" y2="498" stroke="#2367d1" stroke-width="4"/>
+    <text x="416" y="502">상대 난도</text>
+    <circle cx="526" cy="498" r="6" fill="#d94c4c"/>
+    <text x="538" y="502">피크</text>
+    <rect x="602" y="489" width="18" height="18" fill="#dff5e7" stroke="#2f9d5d"/>
+    <text x="630" y="502">회복 구간</text>
+  </g>
+</svg>

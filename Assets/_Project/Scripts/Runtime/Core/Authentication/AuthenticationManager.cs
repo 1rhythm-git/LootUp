@@ -231,6 +231,11 @@ namespace LootUp.Core.Authentication
                         : null,
                     result.Session.UserId);
                 await CurrencyLedgerManager.InitializeAsync();
+                CharacterAcquisitionManager.Configure(
+                    result.Session.Provider == AuthenticationProvider.Backnd
+                        ? new BackndCharacterAcquisitionService(
+                            result.Session.UserId)
+                        : null);
                 ItemCollectionManager.Configure(
                     new LocalCollectionInventoryService(
                         result.Session.UserId));
@@ -262,6 +267,7 @@ namespace LootUp.Core.Authentication
         {
             LeaderboardManager.Configure(null);
             CurrencyLedgerManager.Configure(null, string.Empty);
+            CharacterAcquisitionManager.Configure(null);
             LocalCharacterProgressionService characterProgression =
                 new LocalCharacterProgressionService();
             CharacterProgressionState.Configure(characterProgression);

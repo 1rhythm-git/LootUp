@@ -262,6 +262,21 @@ namespace LootUp.Core.Characters
             return true;
         }
 
+        public static bool ApplyAuthoritativeOwnership(
+            string characterId,
+            bool isOwned)
+        {
+            ICharacterProgressionService activeLocal =
+                localService ?? CharacterProgressionState.Service;
+            if (!activeLocal.SetOwned(characterId, isOwned))
+            {
+                return false;
+            }
+
+            pendingStore?.RemoveOwnership(characterId);
+            return true;
+        }
+
         public static bool TrySelectAndEquip(string characterId)
         {
             ICharacterProgressionSyncService activeService = syncService;

@@ -283,6 +283,16 @@ Private `LootUpCharacterProgress`, `LootUpPlayerLoadout`,
 `LootUpCharacterProgressLedger`를 스키마 정의 및 활성 상태로 생성했다. 코드 구현과
 정적 컴파일도 완료됐으며, 다음 단계는 실제 계정 최초 이관과 재로그인 검증이다.
 
+### P8.1 캐릭터 획득 거래
+
+- 신규 계정은 Agent X만 기본 보유하고 기존 계정의 서버 보유권은 유지
+- Landy 2,500 GameMoney, Ninja 5,000 GameMoney 획득 옵션 우선 활성화
+- 캐릭터별 고정 `requestId`는 `character-purchase:v1:{characterId}` 형식 사용
+- `LootUpPlayerProfile` 잔액 갱신, `LootUpCurrencyLedger` 삽입과 `LootUpCharacterProgress.isOwned` 갱신을 하나의 `TransactionWriteV2`로 처리
+- 동일 원장 재요청은 추가 차감 없이 누락된 보유권만 복구
+- Alice 광고 5회와 Ninja 1,200 Ruby 경로는 데이터·실행 분기만 유지하고 정책 승인 전 비활성
+- 2026-10-19 기준 코드와 Lobby 잠금 UI 컴파일 완료, 미보유 계정 왕복 검증 대기
+
 ### P9. 선택 작업
 
 - Google Play Games Services 로그인

@@ -97,6 +97,10 @@ namespace LootUp.Core.Characters
         private bool initiallyOwned = true;
 
         [SerializeField]
+        [Tooltip("캐릭터를 획득할 수 있는 경로의 기획 데이터입니다. 실행 로직 적용 전에는 비활성 상태로 유지합니다.")]
+        private CharacterAcquisitionOption[] acquisitionOptions;
+
+        [SerializeField]
         [Tooltip("현재 레벨에서 다음 레벨로 올라갈 때 필요한 XP입니다. 미설정된 Lv.99 이전 구간은 마지막 값을 사용합니다.")]
         private int[] requiredExperienceByLevel = { 100, 150, 225, 325, 450, 600, 800, 1050, 1350 };
 
@@ -148,6 +152,7 @@ namespace LootUp.Core.Characters
         public float CollectionItemChanceBonusPercent => Mathf.Max(0f, collectionItemChanceBonusPercent);
         public CharacterUpgradeDefinition[] CollectionUpgrades => collectionUpgrades;
         public bool InitiallyOwned => initiallyOwned;
+        public CharacterAcquisitionOption[] AcquisitionOptions => acquisitionOptions;
         public int MaxCharacterLevel => MaximumCharacterLevel;
         public CharacterSkillDefinition CharacterSkill => characterSkill;
         public string UnlockableSkillId => characterSkill != null ? characterSkill.SkillId : unlockableSkillId;
@@ -161,6 +166,32 @@ namespace LootUp.Core.Characters
             || (!string.IsNullOrWhiteSpace(unlockableSkillId)
                 && !string.Equals(unlockableSkillId, "Undefined", System.StringComparison.OrdinalIgnoreCase));
         public float SkillItemPageSpawnChance => ItemChance;
+
+        public CharacterAcquisitionOption GetPrimaryAcquisitionOption()
+        {
+            if (acquisitionOptions == null)
+            {
+                return null;
+            }
+
+            CharacterAcquisitionOption fallback = null;
+            for (int i = 0; i < acquisitionOptions.Length; i++)
+            {
+                CharacterAcquisitionOption option = acquisitionOptions[i];
+                if (option == null)
+                {
+                    continue;
+                }
+
+                fallback ??= option;
+                if (option.Enabled)
+                {
+                    return option;
+                }
+            }
+
+            return fallback;
+        }
 
         public float GetIdleFrameScale(int frameIndex)
         {
