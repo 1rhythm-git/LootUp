@@ -3,3 +3,4 @@ Date,TaskId,Workstream,Description,EstimatedHours,EarnedHours,State,Reference
 2026-10-19,STAB-LOADOUT-ROUNDTRIP,STAB,"캐릭터 Loadout 선택·서버 동기화·원래 캐릭터 복원 왕복 검증",0.5,0.5,Done,"CharacterProgressionValidation Passed=True / Docs/05_WORK_LOG.md"
 2026-10-19,STAB-VERSION-GATE-LOWER,STAB,"게이트 포함 낮은 버전 Android APK 강제 업데이트 차단 검증",0.5,0.0,Blocked,"다음 버전 업데이트 시 이전 APK를 보존해 재개 / Docs/05_WORK_LOG.md"
 2026-10-19,STAB-CHAR-PENDING-EDITOR,STAB,"Editor 캐릭터 오프라인 전환 및 Pending 복구 메뉴",0.5,0.5,Done,"Pending 저장·중복 방지·Flush·APK XP 복구 확인 / Docs/05_WORK_LOG.md"
+2026-10-19,STAB-CHAR-ACCOUNT-RECOVERY,STAB,"캐릭터 계정 A/B 데이터 분리 및 Editor·APK 양방향 복구 검증",1.0,1.0,Done,"A default Lv5 XP202 / B landy Lv1 XP98 / BackND owner 분리 확인 / Docs/05_WORK_LOG.md"
