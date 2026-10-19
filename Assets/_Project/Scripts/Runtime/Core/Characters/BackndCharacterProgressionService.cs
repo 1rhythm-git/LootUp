@@ -28,12 +28,35 @@ namespace LootUp.Core.Characters
         private readonly SemaphoreSlim operationGate =
             new SemaphoreSlim(1, 1);
 
+#if UNITY_EDITOR
+        private static bool editorOfflineSimulationEnabled;
+
+        public static bool EditorOfflineSimulationEnabled =>
+            editorOfflineSimulationEnabled;
+
+        public static void SetEditorOfflineSimulation(bool enabled)
+        {
+            editorOfflineSimulationEnabled = enabled;
+        }
+
+        [RuntimeInitializeOnLoadMethod(
+            RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetEditorOfflineSimulation()
+        {
+            editorOfflineSimulationEnabled = false;
+        }
+#endif
+
         public BackndCharacterProgressionService(string userId)
         {
             this.userId = userId?.Trim() ?? string.Empty;
         }
 
         public bool IsOnline =>
+#if UNITY_EDITOR
+            !editorOfflineSimulationEnabled
+            &&
+#endif
             !string.IsNullOrWhiteSpace(userId)
             && BackndSdkManager.State
             == BackndInitializationState.Initialized;

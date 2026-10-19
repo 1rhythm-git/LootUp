@@ -6133,3 +6133,92 @@ ________________________________________
 
 다음 작업:
 • `STAB` 선결 안정화 작업을 예상 작업량과 당일 목표를 먼저 산출한 뒤 시작한다.
+
+________________________________________
+
+## 2026-10-19 캐릭터 Loadout 왕복 검증 완료
+
+완료 내용:
+• 실제 로그인 계정에서 캐릭터 Loadout 왕복 검증 메뉴를 실행했다.
+• 현재 캐릭터와 다른 보유 캐릭터를 선택하고 서버 재동기화한 뒤 원래 캐릭터로 복원하는 전체 경로를 확인했다.
+• 검증 과정에서 사용한 원래 캐릭터 선택 상태가 테스트 종료 후 정상 복원됐다.
+
+변경된 주요 파일:
+• `Docs/05_WORK_LOG.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+
+검증 결과:
+• `TargetApplied=True`, `Restored=True`, `Passed=True` 결과를 사용자가 확인했다.
+• Loadout 선택과 장착 상태가 서버 동기화 이후에도 일치했다.
+
+남은 확인:
+• Android 최신 APK 정상 접속, 구버전 강제 차단, 네트워크 실패 후 재시도와 Title 버전 표시를 실기기에서 확인한다.
+
+다음 작업:
+• 재시작 최우선: Android 최신 APK에서 정상 로그인과 Title `VER 1.0.1` 표시를 확인한다.
+• 이후 구버전 차단과 네트워크 실패 후 `RETRY` 경로를 순서대로 검증한다.
+
+작업 기준:
+• `STAB` 획득 작업량 0.5시간을 완료 실적으로 기록한다.
+
+________________________________________
+
+## 2026-10-19 낮은 버전 APK 차단 검증 보류
+
+현재 상태:
+• 기존 낮은 버전 APK가 삭제되어 구버전 강제 업데이트 차단을 실기기에서 확인하지 못했다.
+• 검증 미수행 항목이므로 완료 작업량은 부여하지 않고 `Blocked`로 기록했다.
+• 최신 APK 정상 접속과 네트워크 실패 후 `RETRY` 검증은 별도 미확인 항목으로 유지한다.
+
+보류 기준:
+• 현재 버전에서 임시 저버전 QA APK를 별도로 생성하지 않는다.
+• 다음 `versionName`·`versionCode` 업데이트 전에 현재 APK를 보존하고, BackND 최신 버전 등록 후 이전 APK의 강제 업데이트 차단을 검증한다.
+• 다음 버전 업데이트 작업 체크리스트에 구버전 APK 보존과 차단 검증을 필수 항목으로 포함한다.
+
+남은 확인:
+• 최신 `1.0.1` APK 정상 로그인과 Title `VER 1.0.1` 표시를 확인한다.
+• 네트워크 실패 후 `RETRY` 복구 경로를 확인한다.
+• 다음 버전 업데이트 시 보존한 이전 APK로 낮은 버전 강제 차단을 재개한다.
+
+다음 작업:
+• 재시작 최우선: 캐릭터 오프라인 Pending Queue 저장·재로그인 재전송·중복 방지를 검증한다.
+• 이후 캐릭터 계정 A/B 데이터 분리와 다른 기기 복구 검증을 진행한다.
+
+________________________________________
+
+## 2026-10-19 Editor 캐릭터 오프라인 검증 메뉴 구현
+
+완료 내용:
+• 실제 PC 네트워크를 차단하지 않고 캐릭터 진행도 서비스만 오프라인으로 전환하는 Editor 전용 오버라이드를 추가했다.
+• `LootUp > Validation > Backend Connectivity > Simulate Character Offline` 메뉴를 추가했다.
+• `Queue Test Character XP (+1)` 메뉴에서 동일 `requestId`를 두 번 요청해 첫 Pending 저장과 중복 선반영 방지를 즉시 확인하도록 구성했다.
+• `Restore Character Online + Flush Pending` 메뉴에서 온라인 복원 후 `CharacterProgressionManager.InitializeAsync()`를 실행하도록 구성했다.
+• 오프라인 시 XP·보유·Loadout 요청은 기존 Pending Queue 경로를 사용하며 Android Player에는 테스트 오버라이드가 포함되지 않는다.
+• Play Mode 종료 또는 재진입 시 오프라인 시뮬레이션이 자동 초기화되도록 구성했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Characters/BackndCharacterProgressionService.cs`
+• `Assets/_Project/Scripts/Editor/BackendConnectivityValidationMenu.cs`
+• `Assets/_Project/Scripts/Editor/BackendConnectivityValidationMenu.cs.meta`
+• `Docs/05_WORK_LOG.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+
+검증 결과:
+• Unity Editor Runtime, Android Player Runtime과 Editor 검증 메뉴 C# 컴파일에 성공했다.
+• `git diff --check`에서 내용 오류가 없으며 기존 LF/CRLF 변환 안내만 확인했다.
+• 요청 `validation:pending-xp:acf08251c469478aa97b4be4d9c72069`에서 `First=Queued`, `Second=Queued`, `PendingDuplicateGuardPassed=True`를 확인했다.
+• 동일 Pending 요청의 두 번째 호출에서 캐릭터 XP가 다시 선반영되지 않는 것을 확인했다.
+• 온라인 복원 결과 `PendingFlushSucceeded=True`, `State=Synchronized`를 확인해 Pending 재전송 경로가 성공한 것을 확인했다.
+• BackND `LootUpCharacterProgressLedger`에서 해당 `requestId`가 정확히 1행이며 `experienceAfter=200`, `experienceDelta=1`, `levelAfter=5`, `reason=validation_pending`인 것을 확인했다.
+• BackND `LootUpCharacterProgress`에서 `default` 캐릭터가 `currentExperience=200`, `level=5`로 동기화된 것을 확인했다.
+• Android APK 재접속 후에도 Level 5 / XP 200이 유지돼 Pending 요청이 중복 적용되지 않는 것을 사용자가 확인했다.
+
+남은 확인:
+• 없음.
+
+다음 작업:
+• 캐릭터 계정 A/B 데이터 분리와 다른 기기 복구 검증을 진행한다.
+• 이후 1주차 레벨 디자인 및 BM 경제·보상 기준안 수립을 시작한다.
+
+작업 기준:
+• 구현·컴파일과 Editor/BackND/APK 실검증을 완료해 `STAB` 획득 작업량 0.5시간을 `Done`으로 기록한다.

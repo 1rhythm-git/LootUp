@@ -1,2 +1,5 @@
 Date,TaskId,Workstream,Description,EstimatedHours,EarnedHours,State,Reference
 2026-10-18,SYS-TRACKER-SETUP,OUT_OF_SCOPE,"출시 일정 및 작업량 계측 체계 수립",1.0,0.0,OutOfScope,"Docs/09_RELEASE_PROGRESS_TRACKER.md"
+2026-10-19,STAB-LOADOUT-ROUNDTRIP,STAB,"캐릭터 Loadout 선택·서버 동기화·원래 캐릭터 복원 왕복 검증",0.5,0.5,Done,"CharacterProgressionValidation Passed=True / Docs/05_WORK_LOG.md"
+2026-10-19,STAB-VERSION-GATE-LOWER,STAB,"게이트 포함 낮은 버전 Android APK 강제 업데이트 차단 검증",0.5,0.0,Blocked,"다음 버전 업데이트 시 이전 APK를 보존해 재개 / Docs/05_WORK_LOG.md"
+2026-10-19,STAB-CHAR-PENDING-EDITOR,STAB,"Editor 캐릭터 오프라인 전환 및 Pending 복구 메뉴",0.5,0.5,Done,"Pending 저장·중복 방지·Flush·APK XP 복구 확인 / Docs/05_WORK_LOG.md"
