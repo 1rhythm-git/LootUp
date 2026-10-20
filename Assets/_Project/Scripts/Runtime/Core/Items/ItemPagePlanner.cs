@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using LootUp.Core.Characters;
+using LootUp.Core.Enemies;
 using LootUp.Core.Player;
 using LootUp.Core.Profile;
 using LootUp.Core.World;
@@ -43,6 +44,7 @@ namespace LootUp.Core.Items
         private readonly int speedItemPassCountMin;
         private readonly int speedItemPassCountMax;
         private readonly int scoreBonusPercentPerExtraPass;
+        private readonly DifficultyBandDefinition difficultyBands;
 
         public ItemSpawnPolicy(
             ItemTable itemTable,
@@ -55,7 +57,8 @@ namespace LootUp.Core.Items
             int randomPassCountMax,
             int speedItemPassCountMin,
             int speedItemPassCountMax,
-            int scoreBonusPercentPerExtraPass)
+            int scoreBonusPercentPerExtraPass,
+            DifficultyBandDefinition difficultyBands)
         {
             this.itemTable = itemTable;
             this.eventRecorder = eventRecorder;
@@ -68,6 +71,7 @@ namespace LootUp.Core.Items
             this.speedItemPassCountMin = speedItemPassCountMin;
             this.speedItemPassCountMax = speedItemPassCountMax;
             this.scoreBonusPercentPerExtraPass = scoreBonusPercentPerExtraPass;
+            this.difficultyBands = difficultyBands;
         }
 
         public ItemDefinition GetGuaranteedGoldenCup(FloorPageData pageData)
@@ -101,7 +105,7 @@ namespace LootUp.Core.Items
             {
                 if (candidates[i].ItemType != ItemType.Collection && CanSpawnForPlayer(candidates[i]))
                 {
-                    totalWeight += Mathf.Max(0, candidates[i].SpawnWeight);
+                    totalWeight += GetStandardSpawnWeight(candidates[i], absoluteFloor);
                 }
             }
 
@@ -120,7 +124,7 @@ namespace LootUp.Core.Items
                     continue;
                 }
 
-                cursor += Mathf.Max(0, candidates[i].SpawnWeight);
+                cursor += GetStandardSpawnWeight(candidates[i], absoluteFloor);
                 if (roll < cursor)
                 {
                     return candidates[i];
@@ -128,6 +132,37 @@ namespace LootUp.Core.Items
             }
 
             return null;
+        }
+
+        private int GetStandardSpawnWeight(
+            ItemDefinition definition,
+            int absoluteFloor)
+        {
+            int baseWeight = definition != null
+                ? Mathf.Max(0, definition.SpawnWeight)
+                : 0;
+            if (baseWeight == 0 || !IsSupportItem(definition))
+            {
+                return baseWeight;
+            }
+
+            float multiplier = 1f;
+            if (difficultyBands != null
+                && difficultyBands.TryGetValues(
+                    absoluteFloor,
+                    out DifficultyBandValues values))
+            {
+                multiplier = values.SupportItemWeightMultiplier;
+            }
+
+            return Mathf.Max(0, Mathf.RoundToInt(baseWeight * multiplier));
+        }
+
+        private static bool IsSupportItem(ItemDefinition definition)
+        {
+            return definition != null
+                && (definition.ItemType == ItemType.Time
+                    || definition.ItemType == ItemType.Fever);
         }
 
         // (추가) 수집형 아이템의 페이지 단위 출현 정책을 Spawner에서 분리한다.

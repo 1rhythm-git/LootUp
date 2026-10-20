@@ -303,6 +303,7 @@ MonoBehaviour:
   floorManager: {fileID: 300103}
   playerSpawner: {fileID: 300104}
   eventRecorder: {fileID: 300106}
+  difficultyBands: {fileID: 11400000, guid: 720a6f04db804c6c8697fc28b949ccef, type: 2}
   itemLayer: {fileID: 300951}
   spawnOnStart: 1
   maxItemsPerPage: 6
@@ -373,6 +374,7 @@ MonoBehaviour:
   guideLineLayer: {fileID: 0}
   playerLayer: {fileID: 300931}
   spawnOnStart: 1
+  difficultyBands: {fileID: 11400000, guid: 720a6f04db804c6c8697fc28b949ccef, type: 2}
   baseEnemiesPerPage: 4
   maxEnemiesPerPage: 7
   floorsPerEnemyIncrease: 10

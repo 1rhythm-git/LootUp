@@ -225,7 +225,13 @@ Enemy Spawner도 함께 비활성화하여 결과창 이후 새 Enemy가 생성�
 1~10F는 Enemy 4개와 Red Line 0개로 학습 구간을 제공하고, 31~40F는 Enemy 7개와 Red Line 2개의 첫 피크로 구성한다.
 41~50F, 81~90F, 121~130F는 직전 피크보다 Enemy, Red Line과 속도를 낮추고 Time·Fever 지원 아이템 가중치를 1.25배 적용하는 회복 구간으로 사용한다.
 Enemy는 7개, Red Line은 4개를 상한으로 유지하며 130F 이후에도 같은 40층 주기를 반복하되 장기 기준 난도는 계속 상승한다.
-현재 수치는 `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`의 표와 난도 그래프를 기준으로 하며, `DifficultyBandDefinition` 구현과 Editor·APK 체감 검증 후 확정한다.
+현재 수치는 `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`의 표와 난도 그래프를 기준으로 `DifficultyBandDefinition` 및 `DifficultyBandsV02` 에셋에 적용했다. 최종 수치는 Editor·APK 체감 검증 후 확정한다.
+
+10.9 레벨 밸런스 시뮬레이터
+Editor 시뮬레이터 V1은 실제 난도·아이템·캐릭터 데이터로 캐릭터 4종 20,000회 비교 리포트 검증을 완료했다.
+다음 재시작 최우선은 `구간 분석` 탭 표시 복구와 반복 플레이 XP·레벨 성장 시뮬레이션 V1.1이다.
+V1.1은 한 런의 XP, 레벨업과 스킬 해금 상태를 다음 런에 승계하고 목표 레벨까지 필요한 런 수와 레벨별 P50·P90 도달 층을 표와 그래프로 제공한다.
+XP 레벨과 CharacterCoin 강화는 강화 수치가 확정될 때까지 서로 다른 성장 축으로 유지한다.
 ________________________________________
 11. EnemyTrail 시스템
 적이 아래로 이동할 때 수직 이동 흔적이 생성된다.

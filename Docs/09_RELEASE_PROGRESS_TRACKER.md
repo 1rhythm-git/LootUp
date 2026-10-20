@@ -86,6 +86,9 @@
 
 - 작업 시작 전 예상 작업량을 하위 작업 단위로 나눈다.
 - 작업 종료 후 완료된 하위 작업만 합산해 CSV의 `EarnedHours`에 기록한다.
+- 실적 원장을 변경한 작업은 측정 결과와 `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`, `Docs/Images/google-play-progress-gauges.svg`의 표시값을 같은 작업 안에서 동기화한다.
+- 일정표 구조가 바뀌지 않더라도 현재 주차의 실적·잔여 작업 설명이 달라지면 `Docs/Images/google-play-roadmap-timeline.svg`의 설명과 막대를 함께 확인한다.
+- 원장, 로드맵 본문과 시각화 수치가 다르면 일정 보고를 완료로 처리하지 않는다.
 - 같은 작업을 이어서 수행하면 날짜별로 행을 추가한다.
 - `State`는 `Done`, `Partial`, `Blocked`, `OutOfScope` 중 하나를 사용한다.
 - `Reference`에는 커밋 해시, 문서 경로 또는 검증 로그를 기록한다.

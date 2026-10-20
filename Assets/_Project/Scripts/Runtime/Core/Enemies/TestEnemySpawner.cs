@@ -33,6 +33,11 @@ namespace LootUp.Core.Enemies
         [SerializeField]
         private bool spawnOnStart = true;
 
+        [Header("Difficulty Balance")]
+        [SerializeField]
+        [Tooltip("설정하면 10층 단위 난도 데이터를 사용하고, 비어 있으면 기존 증가 공식을 사용합니다.")]
+        private DifficultyBandDefinition difficultyBands;
+
         [SerializeField]
         private int baseEnemiesPerPage = 4;
 
@@ -185,16 +190,42 @@ namespace LootUp.Core.Enemies
             ClearSpawnedEnemies();
             lastPageIndex = floorManager != null ? floorManager.CurrentPageIndex : lastPageIndex;
 
+            int currentFloor = floorManager != null
+                ? floorManager.CurrentAbsoluteFloor
+                : 1;
             int difficultyStep = GetDifficultyStep();
             int enemyCount = GetEnemyCountForDifficulty(difficultyStep);
             int pageNumber = floorManager != null ? floorManager.CurrentPageIndex + 1 : 1;
             int dangerousLineEnemyCount = GetDangerousLineEnemyCount(pageNumber, enemyCount);
+            float difficultySpeedBonus = GetDifficultySpeedBonus(
+                difficultyStep);
+            if (difficultyBands != null
+                && difficultyBands.TryGetValues(
+                    currentFloor,
+                    out DifficultyBandValues band))
+            {
+                int internalLineCount = GetInternalLineCount();
+                enemyCount = Mathf.Clamp(
+                    band.EnemyCount,
+                    1,
+                    internalLineCount);
+                dangerousLineEnemyCount = Mathf.Clamp(
+                    band.DangerousLineCount,
+                    0,
+                    enemyCount);
+                difficultySpeedBonus = band.EnemySpeedBonus;
+            }
+
             BuildLineSelection(enemyCount, dangerousLineEnemyCount);
 
             for (int i = 0; i < availableLineIndices.Count; i++)
             {
                 int lineIndex = availableLineIndices[i];
-                SpawnEnemyAtLine(lineIndex, i, difficultyStep, dangerousLineIndices.Contains(lineIndex));
+                SpawnEnemyAtLine(
+                    lineIndex,
+                    i,
+                    difficultySpeedBonus,
+                    dangerousLineIndices.Contains(lineIndex));
             }
         }
 
@@ -203,7 +234,11 @@ namespace LootUp.Core.Enemies
             enabled = !isPaused;
         }
 
-        private void SpawnEnemyAtLine(int lineIndex, int sequenceIndex, int difficultyStep, bool canCycleDangerousLine)
+        private void SpawnEnemyAtLine(
+            int lineIndex,
+            int sequenceIndex,
+            float difficultySpeedBonus,
+            bool canCycleDangerousLine)
         {
             GameObject enemyObject = new GameObject($"TestEnemy_Line_{lineIndex}", typeof(RectTransform), typeof(TestEnemyHazard));
             enemyObject.layer = enemyLayer.gameObject.layer;
@@ -214,9 +249,19 @@ namespace LootUp.Core.Enemies
 
             CreateEnemyVisual(enemyObject.transform, enemyObject.layer);
 
-            float difficultySpeedBonus = Mathf.Max(0f, speedStepPerDifficulty) * Mathf.Max(0, difficultyStep);
-            float lineMinSpeed = Mathf.Max(0f, minVerticalSpeed + difficultySpeedBonus + speedStepPerLine * sequenceIndex);
-            float lineMaxSpeed = Mathf.Max(lineMinSpeed, maxVerticalSpeed + difficultySpeedBonus + speedStepPerLine * sequenceIndex);
+            float clampedDifficultySpeedBonus = Mathf.Max(
+                0f,
+                difficultySpeedBonus);
+            float lineMinSpeed = Mathf.Max(
+                0f,
+                minVerticalSpeed
+                + clampedDifficultySpeedBonus
+                + speedStepPerLine * sequenceIndex);
+            float lineMaxSpeed = Mathf.Max(
+                lineMinSpeed,
+                maxVerticalSpeed
+                + clampedDifficultySpeedBonus
+                + speedStepPerLine * sequenceIndex);
             TestEnemyHazard enemy = enemyObject.GetComponent<TestEnemyHazard>();
             enemy.Configure(
                 buildingGridUI,
@@ -289,6 +334,12 @@ namespace LootUp.Core.Enemies
             int maxCount = Mathf.Clamp(maxEnemiesPerPage, minCount, internalLineCount);
 
             return Mathf.Clamp(minCount + Mathf.Max(0, difficultyStep), minCount, maxCount);
+        }
+
+        private float GetDifficultySpeedBonus(int difficultyStep)
+        {
+            return Mathf.Max(0f, speedStepPerDifficulty)
+                * Mathf.Max(0, difficultyStep);
         }
 
         private int GetInternalLineCount()

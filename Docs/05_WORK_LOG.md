@@ -6549,3 +6549,240 @@ ________________________________________
 
 작업 기준:
 • 출시 로드맵 게이지와 11주 일정표 작성 완료분으로 `DESIGN` 획득 작업량 0.5시간을 `Done`으로 기록한다.
+
+________________________________________
+
+## 2026-10-20 캐릭터 구매 UI 선결 점검
+
+완료 내용:
+• `DifficultyBandDefinition` 작업 전에 직전 캐릭터 구매 기능의 Lobby UI와 Scene 연결 상태를 점검했다.
+• 구매 UI는 `LobbyController`가 런타임에 생성하므로 새 GameObject나 Inspector 참조 추가는 필요하지 않음을 확인했다.
+• 미보유 캐릭터 탐색, 잠금 표시, 가격 표시, 구매 처리 중 버튼 비활성화와 구매 후 선택 흐름을 확인했다.
+
+검증 결과:
+• 기존 `START` 버튼이 미보유 캐릭터에서는 구매 버튼으로 재사용되고 가격은 버튼과 XP 영역에 표시된다.
+• 구매 실패는 Console 경고만 남고 사용자 화면에는 사유가 표시되지 않는다.
+• 잔액 부족 또는 오프라인 상태에서는 버튼만 비활성화되어 사용자가 원인을 구분할 수 없다.
+• 재화 차감 전에 확인 단계가 없고 `START`와 구매가 같은 색과 위치를 사용해 오입력 위험이 있다.
+• 출시 V1에서 Ruby를 숨긴다는 기획과 달리 Lobby Header에 Ruby 아이콘과 잔액이 항상 노출된다.
+
+선결 수정 제안:
+• Lobby Header의 Ruby 아이콘·잔액은 출시 플래그가 활성화될 때만 표시한다.
+• GameMoney 구매 전 캐릭터명·가격·구매 후 잔액을 보여주는 확인 패널을 추가한다.
+• 잔액 부족, 오프라인, 서버 실패를 Lobby 내부 상태 문구로 표시한다.
+• 보유 캐릭터의 `START`와 미보유 캐릭터의 `UNLOCK`을 아이콘·색상으로 구분한다.
+
+남은 확인:
+• 위 UI 보완 후 미보유 테스트 계정으로 Landy 구매, 재로그인과 중복 차감 방지를 검증해야 한다.
+• Alice 광고 경로와 Ninja Ruby 대체 경로는 비활성 상태를 유지한다.
+
+다음 작업:
+• 캐릭터 구매 UI 최소 보완을 먼저 적용한 뒤 실제 계정 왕복 검증을 완료한다.
+• 이후 `DifficultyBandDefinition` 및 10층 난도 데이터 구현을 진행한다.
+
+작업 기준:
+• 캐릭터 구매 UI와 출시 BM 노출 정책 점검 완료분으로 `SHOP` 획득 작업량 0.25시간을 `Done`으로 기록한다.
+
+________________________________________
+
+## 2026-10-20 난도 밴드 V0.2 런타임 적용
+
+완료 내용:
+• 10층 단위 Enemy 수, Red Line 수, 속도 보정과 지원 아이템 가중치를 보관하는 `DifficultyBandDefinition`을 구현했다.
+• 1~130F 난도 V0.2 표를 `DifficultyBandsV02` 에셋으로 생성하고 InGame의 `TestEnemySpawner`에 연결했다.
+• 130F 이후에는 91~130F 파형을 반복하면서 40층 주기마다 속도 보정 `+12`를 적용하도록 구성했다.
+• 난도 에셋 참조가 없거나 데이터가 비어 있으면 기존 증가 공식을 사용하도록 폴백을 유지했다.
+• 기능 개발 중 UI 변동을 누적할 `Docs/11_UI_CHANGE_BACKLOG.md`를 만들고 11월 말 일괄 리뉴얼 후보 일정에 연결했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Enemies/DifficultyBandDefinition.cs`
+• `Assets/_Project/Data/Difficulty/DifficultyBandsV02.asset`
+• `Assets/_Project/Scripts/Runtime/Core/Enemies/TestEnemySpawner.cs`
+• `Assets/_Project/Scenes/InGame.unity`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/11_UI_CHANGE_BACKLOG.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+
+검증 결과:
+• 실행 중인 Unity 6.3.17f1에서 신규 스크립트 추가 후 도메인 리로드와 C# 컴파일 성공을 확인했다.
+• Scene의 난도 에셋 GUID와 에셋의 스크립트 GUID 연결을 확인했다.
+• 13개 명시 밴드가 설계표의 Enemy, Red Line, 속도와 지원 아이템 배율에 일치함을 확인했다.
+• 131F 이후 반복 계산은 91~130F 원본 파형과 주기별 속도 `+12` 규칙을 사용한다.
+
+남은 확인:
+• Editor와 APK에서 31~40F/41~50F, 71~80F/81~90F 체감 차이를 각각 확인해야 한다.
+• 지원 아이템 가중치는 데이터만 마련했으며 `ItemSpawner` 적용은 아이템 분류 확정 후 진행한다.
+• UI 변경은 이번 기능에서 발생하지 않았으며 이후 기능별 영향 사항을 UI 백로그에 누적한다.
+
+다음 작업:
+• Editor·APK 샘플 런에서 난도 피크·회복과 GameMoney 수급 표본을 기록한다.
+• 캐릭터 구매 UI는 일괄 리뉴얼 대상으로 유지하고 실제 계정 왕복 검증 시 기능 오류만 확인한다.
+
+작업 기준:
+• 난도 데이터 구조, V0.2 에셋, 스포너 연동과 컴파일 완료분으로 `DESIGN` 획득 작업량 1.5시간을 `Done`으로 기록한다.
+
+________________________________________
+
+## 2026-10-20 지원 아이템 가중치 ItemSpawner 연결
+
+완료 내용:
+• `ItemSpawner`가 InGame Scene의 `DifficultyBandsV02` 에셋을 참조하고 `ItemSpawnPolicy`에 전달하도록 연결했다.
+• 표준 아이템 가중치 추첨에서 현재 층의 `SupportItemWeightMultiplier`를 `Time`과 `Fever` 타입에만 적용했다.
+• 회복 구간 `x1.25`에서 현재 테이블 기준 Time 가중치 `35 -> 44`, Fever 가중치 `18 -> 23`으로 반올림되도록 구성했다.
+• 난도 에셋 참조가 없거나 일반 구간 배율이 `1.0`이면 기존 가중치와 난수 추첨 방식을 유지한다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Items/ItemSpawner.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Items/ItemPagePlanner.cs`
+• `Assets/_Project/Scenes/InGame.unity`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+
+검증 결과:
+• Unity 6.3.17f1의 `Assembly-CSharp` 및 Editor 어셈블리 컴파일과 도메인 리로드 성공을 확인했다.
+• InGame의 `ItemSpawner`와 `TestEnemySpawner`가 동일한 `DifficultyBandsV02` 에셋 GUID를 참조하는 것을 확인했다.
+• 강제 테스트 아이템, Item Chance 보장, Collection과 RISING 선택 경로에는 지원 배율을 적용하지 않는 것을 정적 확인했다.
+• `git diff --check`에서 공백 오류가 없음을 확인했다.
+
+남은 확인:
+• Play Mode 표본 런에서 31~40F 대비 41~50F, 71~80F 대비 81~90F의 Time·Fever 출현 빈도를 비교해야 한다.
+• Editor 및 APK 각 3회 표본에서 회복 구간이 지나치게 쉬우면 `x1.25` 배율을 재조정한다.
+
+다음 작업:
+• 난도 피크·회복 및 GameMoney 수급을 함께 기록하는 샘플 런을 진행한다.
+• 캐릭터 구매 실제 계정 왕복 검증은 UI 일괄 리뉴얼 전 기능 검증 항목으로 유지한다.
+
+작업 기준:
+• 구현, Scene 연결, Unity 컴파일 완료분 0.4시간을 `DESIGN` Partial로 기록하고 Play Mode 표본 검증 0.1시간은 남긴다.
+
+________________________________________
+
+## 2026-10-20 캐릭터 성장 반영 난도 감사 및 시각화 동기화
+
+완료 내용:
+• 진척 원장과 로드맵 게이지를 대조해 전체, DESIGN, 당일, 주간 수치가 이전 실적에 머물러 있던 불일치를 확인하고 최신 값으로 동기화했다.
+• 일정 보고 완료 조건에 원장, 로드맵 본문, 진척 게이지와 일정표의 수치 일치를 추가했다.
+• 현재 XP 레벨은 스킬 해금 외에 이동속도, MaxLife와 Item Chance를 연속 성장시키지 않는 것을 확인했다.
+• 별도 강화 코드는 성장 보정 구조를 제공하지만 실제 강화 에셋과 확정 수치가 없어 현재 런타임 난도에 영향을 주지 않는 것을 확인했다.
+• 난도 V0.2에 Lv.1 무강화, 스킬 해금, 향후 강화 기준군과 층 구간별 통과 원칙을 추가했다.
+• 1주차 총 작업량이 11시간을 넘지 않도록 샘플 런 0.65시간을 2주차로 이동했다.
+
+변경된 주요 파일:
+• `Docs/09_RELEASE_PROGRESS_TRACKER.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/Images/google-play-progress-gauges.svg`
+• `Docs/Images/google-play-roadmap-timeline.svg`
+
+검증 결과:
+• 최신 원장 기준 전체 `10.15/104시간`, DESIGN `6.40/14시간`, 당일 `240%`, 주간 `101.5%`, 일정 대비 `+8.15시간`으로 본문과 SVG를 맞췄다.
+• 10월 19일부터 11월 1일까지 DESIGN 배정 합계가 14시간을 유지하는 것을 확인했다.
+• 1주차 현재 10.15시간에 남은 DESIGN 0.35시간과 SHOP 0.5시간을 더한 최대치가 11시간인 것을 확인했다.
+• 캐릭터별 기본 스탯 차이와 스킬 해금 레벨은 존재하지만 난도표에 성장 기준군이 없었던 사실을 코드와 데이터에서 교차 확인했다.
+
+남은 확인:
+• Agent X Lv.1 무강화 기준으로 1~50F 통과 가능 여부를 우선 측정해야 한다.
+• 51~90F는 Agent X Lv.5와 각 캐릭터 Lv.1을 비교하고, 91~130F는 Lv.5·15·20 스킬 해금 캐릭터를 비교해야 한다.
+• 실제 강화 에셋과 수치가 확정되면 무강화, 중간 강화와 최대 강화 기준군을 추가해야 한다.
+
+다음 작업:
+• Lv.1 무강화 샘플 런에서 최고 층, 피격 수, 잔여 시간, Time·Fever 획득 수와 GameMoney를 기록한다.
+• 표본 결과가 나온 뒤에만 Enemy, Red Line, 속도와 지원 아이템 배율을 V0.3으로 조정한다.
+
+작업 기준:
+• 성장 반영 감사, 기준군 정의, 일정 재배치와 시각화 동기화 완료분 0.25시간을 `DESIGN` Done으로 기록한다.
+
+________________________________________
+
+## 2026-10-20 Editor 레벨 밸런스 시뮬레이터 기반 구현
+
+완료 내용:
+• 실제 `DifficultyBandsV02`, `Items.csv`와 `CharacterDefinition`을 입력으로 사용하는 Monte Carlo 가상 런 엔진을 구현했다.
+• Beginner·Standard·Expert 숙련도, 캐릭터 레벨, 1,000·5,000·10,000회 반복, 최대 층과 Seed를 설정할 수 있게 했다.
+• EditorWindow에 핵심 지표 카드, 10층 밴드별 압박·조건부 통과 그래프, 층별 생존 곡선, 캐릭터 비교표와 자동 경고를 배치했다.
+• 설정 JSON, 전체 런 CSV, 밴드 요약 CSV, Markdown 요약과 SVG 생존 곡선을 `Docs/BalanceReports`로 내보내도록 구성했다.
+• 적 기본 속도·연속 생성 속도, 지원 아이템, Fever와 RISING을 모델에 반영하고 완주를 HP·시간 종료와 분리했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Editor/Balance/LevelBalanceSimulation.cs`
+• `Assets/_Project/Scripts/Editor/Balance/LevelBalanceSimulatorWindow.cs`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/Images/google-play-progress-gauges.svg`
+• `Docs/Images/google-play-roadmap-timeline.svg`
+
+검증 결과:
+• Unity 6.3.17f1이 두 신규 소스를 `Assembly-CSharp-Editor.rsp`에 포함하고 `Assembly-CSharp-Editor.dll`과 PDB를 최신 시각으로 재생성한 것을 확인했다.
+• 결과 분포는 P10·P50·P90, HP 종료·시간 종료·완주, 평균 피격·보상과 RISING 지표로 분리된다.
+• 같은 Seed와 설정을 저장해 수치 변경 전후를 재현할 수 있고 Codex가 CSV·JSON을 직접 분석할 수 있다.
+
+남은 확인:
+• `Tools > LootUp > Level Balance Simulator`를 열어 현재 Editor 해상도에서 카드·그래프·표의 시인성을 확인해야 한다.
+• Lv.1 Agent X 1,000회 실행 후 보고서 5종이 생성되는지 확인해야 한다.
+• 확률 모델은 실제 충돌·조작·성능을 대체하지 않으므로 병목 대표 구간은 Editor와 APK에서 재검증해야 한다.
+
+다음 작업:
+• 시뮬레이터 창 시인성과 첫 보고서 내보내기를 확인한 뒤 결과를 Codex 분석 입력으로 사용한다.
+• 분석 결과로 대표 병목 구간을 선정해 Editor·APK 테스트 횟수를 줄인다.
+
+작업 기준:
+• 표준 1.5시간 중 엔진·Editor 시각화·내보내기·컴파일 완료분 1.4시간을 `DESIGN` Partial로 기록하고 실제 창·내보내기 확인 0.1시간을 남긴다.
+
+________________________________________
+
+## 2026-10-20 레벨 밸런스 리포트 실행 검증
+
+완료 내용:
+• Standard, Lv.1, 5,000회, 130F, Seed `20261020` 조건으로 Alice, Agent X, Landy, Ninja 비교 리포트를 확인했다.
+• `configuration.json`, `run-results.csv`, `band-summary.csv`, `summary.md`, `survival-curve.svg` 5종이 정상 생성됐다.
+• 총 20,000개 런, 52개 밴드 행과 캐릭터별 RunIndex `0..4999`의 중복·누락 없음을 확인했다.
+• 원본 CSV에서 평균과 P10·P50·P90을 재계산해 `summary.md`와 일치함을 확인했다.
+• 고층 진입 표본 1~2회에서 발생한 급락 경고를 발견하고, 최소 30회이면서 전체 런의 1% 이상인 밴드만 급락·회복 경고를 내도록 보완했다.
+• 영어 `Recovery`와 한국어 `회복` 역할을 모두 회복 구간으로 인식하게 수정했다.
+
+검증 결과:
+• JSON과 SVG 파싱 성공, 층 범위·종료 사유 비정상 행 0건이다.
+• P50 최고 층은 Alice 26F, Agent X 17F, Landy 21F, Ninja 32F다.
+• 50F 도달률은 Alice 2.16%, Agent X 0%, Landy 0.20%, Ninja 11.90%이며 네 캐릭터 모두 130F 완주 0%다.
+• Lv.1 결과는 대부분 시간 종료여서 현재 난도보다 초기 90초와 캐릭터 이동속도가 진행 한계를 크게 결정하는 것으로 해석한다.
+
+남은 확인:
+• Agent X 11~20F, Alice 21~30F, Landy 11~30F와 Ninja 31~60F를 대표 구간으로 Editor·APK에서 대조한다.
+• 실플레이 결과 전에는 난도 V0.2 에셋 수치를 변경하지 않는다.
+
+작업 기준:
+• 실제 실행·내보내기·재계산 검증 0.1시간을 반영해 `DESIGN-LEVEL-SIMULATOR-MVP`를 1.5시간 Done으로 전환한다.
+
+________________________________________
+
+## 2026-10-20 시뮬레이터 V1.1 재시작 최우선 예약
+
+완료 내용:
+• `구간 분석` 탭에서 데이터가 생성됐지만 행이 보이지 않는 Editor 레이아웃 문제를 다음 세션의 첫 작업으로 지정했다.
+• ScrollView 내부 `BeginArea` 행 렌더링, 탭 공용 스크롤 위치와 영문 `Recovery` 강조를 우선 점검 대상으로 확정했다.
+• 단일 런 시뮬레이션을 반복 플레이 계정 성장 흐름으로 확장하는 V1.1 요구사항을 확정했다.
+• 각 런의 실제 XP 규칙을 누적하고 레벨업·스킬 해금을 다음 런에 승계하도록 정의했다.
+• 목표 레벨까지 필요한 P10·P50·P90 런 수, 예상 일수와 레벨별 P50·P90 도달 층을 표·그래프·리포트로 출력하도록 정의했다.
+
+변경된 주요 파일:
+• `Docs/00_MASTER_PROJECT_BRIEF.md`
+• `Docs/04_CODEX_EXECUTION_PLAN.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/Images/google-play-progress-gauges.svg`
+• `Docs/Images/google-play-roadmap-timeline.svg`
+
+남은 이슈:
+• 구간 분석 UI 오류는 이번 작업에서 수정하지 않았다.
+• XP 계산은 `CharacterDefinition`의 필요 XP와 `RunResultService`의 런 XP 규칙을 공유해야 하며 임의 중복 수식을 만들지 않는다.
+• 강화 수치가 확정되기 전에는 XP 레벨 성장과 CharacterCoin 강화를 별도 축으로 유지한다.
+
+다음 작업:
+• 재시작 최우선 1: 구간 분석의 13개 밴드 행 표시를 복구하고 탭 전환 스크롤을 검증한다.
+• 재시작 최우선 2: 반복 런 XP·레벨업·스킬 해금 승계 엔진과 성장 그래프·내보내기를 구현한다.
+
+작업 기준:
+• 최우선 예약 명세와 일정 재배치 완료분 0.25시간을 `DESIGN` Done으로 기록한다.

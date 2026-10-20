@@ -1,0 +1,97 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89c61b6a67ef43c59507aa4a930df807, type: 3}
+  m_Name: DifficultyBandsV02
+  m_EditorClassIdentifier:
+  floorsPerBand: 10
+  bands:
+  - startFloor: 1
+    role: Learning
+    enemyCount: 4
+    dangerousLineCount: 0
+    enemySpeedBonus: 0
+    supportItemWeightMultiplier: 1
+  - startFloor: 11
+    role: Rise 1
+    enemyCount: 5
+    dangerousLineCount: 1
+    enemySpeedBonus: 12
+    supportItemWeightMultiplier: 1
+  - startFloor: 21
+    role: Rise 2
+    enemyCount: 6
+    dangerousLineCount: 1
+    enemySpeedBonus: 24
+    supportItemWeightMultiplier: 1
+  - startFloor: 31
+    role: Peak 1
+    enemyCount: 7
+    dangerousLineCount: 2
+    enemySpeedBonus: 36
+    supportItemWeightMultiplier: 1
+  - startFloor: 41
+    role: Recovery 1
+    enemyCount: 5
+    dangerousLineCount: 1
+    enemySpeedBonus: 24
+    supportItemWeightMultiplier: 1.25
+  - startFloor: 51
+    role: Rise 3
+    enemyCount: 6
+    dangerousLineCount: 2
+    enemySpeedBonus: 42
+    supportItemWeightMultiplier: 1
+  - startFloor: 61
+    role: Rise 4
+    enemyCount: 7
+    dangerousLineCount: 3
+    enemySpeedBonus: 54
+    supportItemWeightMultiplier: 1
+  - startFloor: 71
+    role: Peak 2
+    enemyCount: 7
+    dangerousLineCount: 4
+    enemySpeedBonus: 66
+    supportItemWeightMultiplier: 1
+  - startFloor: 81
+    role: Recovery 2
+    enemyCount: 6
+    dangerousLineCount: 2
+    enemySpeedBonus: 48
+    supportItemWeightMultiplier: 1.25
+  - startFloor: 91
+    role: Rise 5
+    enemyCount: 7
+    dangerousLineCount: 3
+    enemySpeedBonus: 72
+    supportItemWeightMultiplier: 1
+  - startFloor: 101
+    role: Rise 6
+    enemyCount: 7
+    dangerousLineCount: 4
+    enemySpeedBonus: 84
+    supportItemWeightMultiplier: 1
+  - startFloor: 111
+    role: Peak 3
+    enemyCount: 7
+    dangerousLineCount: 4
+    enemySpeedBonus: 96
+    supportItemWeightMultiplier: 1
+  - startFloor: 121
+    role: Recovery 3
+    enemyCount: 6
+    dangerousLineCount: 3
+    enemySpeedBonus: 72
+    supportItemWeightMultiplier: 1.25
+  repeatLastCycle: 1
+  repeatFromBandIndex: 9
+  repeatSpeedBonusPerCycle: 12

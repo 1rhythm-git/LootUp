@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using LootUp.Core.Enemies;
 using LootUp.Core.Player;
 using LootUp.Core.World;
 using UnityEngine;
@@ -24,6 +25,9 @@ namespace LootUp.Core.Items
 
         [SerializeField]
         private RunItemEventRecorder eventRecorder;
+
+        [SerializeField]
+        private DifficultyBandDefinition difficultyBands;
 
         [SerializeField]
         private RectTransform itemLayer;
@@ -278,7 +282,8 @@ namespace LootUp.Core.Items
                 randomPassCountMax,
                 speedItemPassCountMin,
                 speedItemPassCountMax,
-                scoreBonusPercentPerExtraPass);
+                scoreBonusPercentPerExtraPass,
+                difficultyBands);
             return new ItemPagePlanner(spawnPolicy);
         }
 
