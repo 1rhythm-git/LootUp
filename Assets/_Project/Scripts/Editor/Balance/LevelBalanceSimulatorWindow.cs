@@ -13,12 +13,15 @@ namespace LootUp.Editor.Balance
         private const string MenuPath = "Tools/LootUp/Level Balance Simulator";
         private static readonly int[] IterationOptions = { 1000, 5000, 10000 };
         private static readonly string[] IterationLabels = { "1,000", "5,000", "10,000" };
+        private static readonly int[] PopulationOptions = { 100, 300, 1000 };
+        private static readonly string[] PopulationLabels = { "100", "300", "1,000" };
         private static readonly string[] TabLabels =
         {
             "대시보드",
             "구간 분석",
             "캐릭터 비교",
-            "가정·경고"
+            "가정·경고",
+            "성장 분석"
         };
 
         [SerializeField]
@@ -73,10 +76,34 @@ namespace LootUp.Editor.Balance
         private bool showAdvancedSettings;
 
         [SerializeField]
+        private bool showGrowthSettings = true;
+
+        [SerializeField]
+        private int startingLevel = 1;
+
+        [SerializeField]
+        private int startingExperience;
+
+        [SerializeField]
+        private int targetLevel = 20;
+
+        [SerializeField]
+        private int maxGrowthRuns = 200;
+
+        [SerializeField]
+        private int growthPopulationIndex = 1;
+
+        [SerializeField]
+        private float runsPerDay = 3f;
+
+        [SerializeField]
         private int selectedTab;
 
         private readonly List<CharacterDefinition> characters = new List<CharacterDefinition>();
         private readonly List<LevelBalanceSimulationResult> results = new List<LevelBalanceSimulationResult>();
+        private readonly List<LevelGrowthSimulationSettings> growthSettings = new List<LevelGrowthSimulationSettings>();
+        private readonly List<LevelGrowthSimulationResult> growthResults = new List<LevelGrowthSimulationResult>();
+        private LevelGrowthSimulationResult growthResult;
         private Vector2 scrollPosition;
         private string statusMessage = "실제 프로젝트 데이터를 불러온 뒤 시뮬레이션을 실행하세요.";
         private string lastExportPath = string.Empty;
@@ -114,10 +141,26 @@ namespace LootUp.Editor.Balance
             DrawActionBar();
             DrawStatus();
 
-            if (results.Count > 0)
+            if (results.Count > 0 || growthResult != null)
             {
-                selectedTab = GUILayout.Toolbar(selectedTab, TabLabels, GUILayout.Height(28f));
+                int nextTab = GUILayout.Toolbar(selectedTab, TabLabels, GUILayout.Height(28f));
+                if (nextTab != selectedTab)
+                {
+                    selectedTab = nextTab;
+                    scrollPosition = Vector2.zero;
+                    GUI.FocusControl(null);
+                }
+
                 EditorGUILayout.Space(8f);
+                if (selectedTab != 4 && results.Count == 0)
+                {
+                    EditorGUILayout.HelpBox(
+                        "이 탭은 선택 캐릭터 실행 또는 전체 캐릭터 비교 결과가 필요합니다.",
+                        MessageType.Info);
+                    EditorGUILayout.EndScrollView();
+                    return;
+                }
+
                 switch (selectedTab)
                 {
                     case 1:
@@ -128,6 +171,9 @@ namespace LootUp.Editor.Balance
                         break;
                     case 3:
                         DrawAssumptionsAndWarnings();
+                        break;
+                    case 4:
+                        DrawGrowthAnalysis();
                         break;
                     default:
                         DrawDashboard();
@@ -192,10 +238,23 @@ namespace LootUp.Editor.Balance
                 characterLabels);
             if (characters.Count > 0)
             {
-                selectedCharacter = characters[Mathf.Clamp(
+                CharacterDefinition nextCharacter = characters[Mathf.Clamp(
                     nextCharacterIndex,
                     0,
                     characters.Count - 1)];
+                if (selectedCharacter != nextCharacter)
+                {
+                    selectedCharacter = nextCharacter;
+                    LevelGrowthSimulationResult matchingResult = growthResults.FirstOrDefault(
+                        result => string.Equals(
+                            result.CharacterId,
+                            selectedCharacter.CharacterId,
+                            StringComparison.OrdinalIgnoreCase));
+                    if (matchingResult != null)
+                    {
+                        growthResult = matchingResult;
+                    }
+                }
             }
 
             skillProfile = (SimulationSkillProfile)EditorGUILayout.EnumPopup(
@@ -259,6 +318,46 @@ namespace LootUp.Editor.Balance
                 EditorGUI.indentLevel--;
             }
 
+            showGrowthSettings = EditorGUILayout.Foldout(
+                showGrowthSettings,
+                "반복 성장 설정",
+                true);
+            if (showGrowthSettings)
+            {
+                EditorGUI.indentLevel++;
+                int maximumLevel = selectedCharacter != null
+                    ? selectedCharacter.MaxCharacterLevel
+                    : 99;
+                startingLevel = EditorGUILayout.IntSlider(
+                    "시작 레벨",
+                    startingLevel,
+                    1,
+                    maximumLevel);
+                startingExperience = EditorGUILayout.IntField(
+                    "시작 XP",
+                    Mathf.Max(0, startingExperience));
+                targetLevel = EditorGUILayout.IntSlider(
+                    "목표 레벨",
+                    Mathf.Max(startingLevel, targetLevel),
+                    startingLevel,
+                    maximumLevel);
+                maxGrowthRuns = EditorGUILayout.IntSlider(
+                    "최대 플레이 횟수",
+                    maxGrowthRuns,
+                    10,
+                    1000);
+                growthPopulationIndex = EditorGUILayout.Popup(
+                    "가상 플레이어 수",
+                    Mathf.Clamp(growthPopulationIndex, 0, PopulationOptions.Length - 1),
+                    PopulationLabels);
+                runsPerDay = EditorGUILayout.Slider(
+                    "일일 플레이 횟수",
+                    runsPerDay,
+                    0.5f,
+                    20f);
+                EditorGUI.indentLevel--;
+            }
+
             EndPanel();
         }
 
@@ -291,11 +390,53 @@ namespace LootUp.Editor.Balance
                 GUI.backgroundColor = previous;
                 GUI.enabled = true;
             }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUI.enabled = CanRun();
+                Color previous = GUI.backgroundColor;
+                GUI.backgroundColor = new Color(0.5f, 0.42f, 0.78f);
+                if (GUILayout.Button("반복 성장 실행", GUILayout.Height(30f)))
+                {
+                    RunGrowthSimulation();
+                }
+
+                GUI.enabled = growthResult != null;
+                GUI.backgroundColor = new Color(0.76f, 0.5f, 0.17f);
+                if (GUILayout.Button("성장 리포트 내보내기", GUILayout.Height(30f)))
+                {
+                    ExportGrowthReport();
+                }
+
+                GUI.backgroundColor = previous;
+                GUI.enabled = true;
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUI.enabled = CanRun() && characters.Count > 1;
+                Color previous = GUI.backgroundColor;
+                GUI.backgroundColor = new Color(0.33f, 0.36f, 0.72f);
+                if (GUILayout.Button("전체 캐릭터 반복 성장", GUILayout.Height(30f)))
+                {
+                    RunAllGrowthSimulations();
+                }
+
+                GUI.enabled = growthResults.Count > 1;
+                GUI.backgroundColor = new Color(0.83f, 0.46f, 0.16f);
+                if (GUILayout.Button("통합 성장 리포트 내보내기", GUILayout.Height(30f)))
+                {
+                    ExportGrowthComparisonReport();
+                }
+
+                GUI.backgroundColor = previous;
+                GUI.enabled = true;
+            }
         }
 
         private void DrawStatus()
         {
-            MessageType type = results.Count > 0
+            MessageType type = results.Count > 0 || growthResult != null
                 ? MessageType.None
                 : MessageType.Info;
             EditorGUILayout.HelpBox(statusMessage, type);
@@ -416,21 +557,17 @@ namespace LootUp.Editor.Balance
                             : new Color(0f, 0f, 0f, 0.035f));
                 }
 
-                GUILayout.BeginArea(rowRect);
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    DrawTableLabel(result.CharacterName, 150f);
-                    DrawTableLabel($"{result.P10HighestFloor}F", 55f);
-                    DrawTableLabel($"{result.MedianHighestFloor}F", 55f);
-                    DrawTableLabel($"{result.P90HighestFloor}F", 55f);
-                    DrawTableLabel($"{result.AverageHighestFloor:0.0}", 75f);
-                    DrawTableLabel($"{result.LifeDepletedPercent:0.0}%", 80f);
-                    DrawTableLabel($"{result.TimeOverPercent:0.0}%", 80f);
-                    DrawTableLabel($"{result.AverageSupportItems:0.00}", 70f);
-                    DrawTableLabel($"{result.AverageGameMoney:0.00}", 70f);
-                    DrawTableLabel($"{result.AverageRisingActivations:0.00}", 70f);
-                }
-                GUILayout.EndArea();
+                float x = rowRect.x;
+                DrawFixedCell(rowRect, ref x, result.CharacterName, 150f);
+                DrawFixedCell(rowRect, ref x, $"{result.P10HighestFloor}F", 55f);
+                DrawFixedCell(rowRect, ref x, $"{result.MedianHighestFloor}F", 55f);
+                DrawFixedCell(rowRect, ref x, $"{result.P90HighestFloor}F", 55f);
+                DrawFixedCell(rowRect, ref x, $"{result.AverageHighestFloor:0.0}", 75f);
+                DrawFixedCell(rowRect, ref x, $"{result.LifeDepletedPercent:0.0}%", 80f);
+                DrawFixedCell(rowRect, ref x, $"{result.TimeOverPercent:0.0}%", 80f);
+                DrawFixedCell(rowRect, ref x, $"{result.AverageSupportItems:0.00}", 70f);
+                DrawFixedCell(rowRect, ref x, $"{result.AverageGameMoney:0.00}", 70f);
+                DrawFixedCell(rowRect, ref x, $"{result.AverageRisingActivations:0.00}", 70f);
             }
 
             EditorGUILayout.Space(12f);
@@ -487,6 +624,260 @@ namespace LootUp.Editor.Balance
             EditorGUILayout.LabelField("band-summary.csv", "10층 구간별 난도·통과율", mutedStyle);
             EditorGUILayout.LabelField("summary.md", "요약·자동 경고·분석 지침", mutedStyle);
             EditorGUILayout.LabelField("survival-curve.svg", "캐릭터별 구간 진입률 그래프", mutedStyle);
+        }
+
+        private void DrawGrowthAnalysis()
+        {
+            if (growthResult == null)
+            {
+                EditorGUILayout.HelpBox(
+                    "반복 성장 실행을 누르면 플레이 횟수별 레벨과 도달 층 분포가 표시됩니다.",
+                    MessageType.Info);
+                return;
+            }
+
+            if (growthResults.Count > 1)
+            {
+                DrawGrowthComparisonTable();
+                EditorGUILayout.Space(14f);
+            }
+
+            LevelGrowthMilestoneResult target = growthResult.Milestones.LastOrDefault();
+            LevelGrowthCurvePoint finalPoint = growthResult.Curve.LastOrDefault();
+            DrawSectionTitle(
+                $"{growthResult.CharacterName} · Lv.{growthResult.StartingLevel} → Lv.{growthResult.TargetLevel}");
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                DrawMetricCard(
+                    "목표 도달률",
+                    target != null ? $"{target.ReachedPercent:0.0}%" : "-",
+                    $"최대 {growthResult.MaxRuns:N0}회",
+                    new Color(0.5f, 0.42f, 0.78f));
+                DrawMetricCard(
+                    "P50 필요 횟수",
+                    target != null && target.MedianRuns >= 0
+                        ? $"{target.MedianRuns:N0}회"
+                        : "미도달",
+                    target != null && target.MedianDays >= 0f
+                        ? $"약 {target.MedianDays:0.0}일"
+                        : "설정 범위 초과",
+                    new Color(0.15f, 0.63f, 0.46f));
+                DrawMetricCard(
+                    "최종 P50 레벨",
+                    finalPoint != null ? $"Lv.{finalPoint.MedianLevel}" : "-",
+                    finalPoint != null
+                        ? $"P10 {finalPoint.P10Level} · P90 {finalPoint.P90Level}"
+                        : string.Empty,
+                    new Color(0.16f, 0.47f, 0.82f));
+                DrawMetricCard(
+                    "최종 도달 층",
+                    finalPoint != null ? $"{finalPoint.MedianFloor}F" : "-",
+                    finalPoint != null
+                        ? $"P10 {finalPoint.P10Floor}F · P90 {finalPoint.P90Floor}F"
+                        : string.Empty,
+                    new Color(0.9f, 0.62f, 0.12f));
+            }
+
+            EditorGUILayout.Space(12f);
+            DrawSectionTitle("반복 플레이 성장 곡선");
+            Rect chartRect = GUILayoutUtility.GetRect(
+                100f,
+                330f,
+                GUILayout.ExpandWidth(true));
+            DrawGrowthChart(chartRect, growthResult);
+
+            EditorGUILayout.Space(12f);
+            DrawSectionTitle("레벨 마일스톤");
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            {
+                DrawTableLabel("레벨", 90f, true);
+                DrawTableLabel("도달률", 100f, true);
+                DrawTableLabel("P10 횟수", 100f, true);
+                DrawTableLabel("P50 횟수", 100f, true);
+                DrawTableLabel("P90 횟수", 100f, true);
+                DrawTableLabel("P50 일수", 100f, true);
+            }
+
+            for (int i = 0; i < growthResult.Milestones.Count; i++)
+            {
+                LevelGrowthMilestoneResult row = growthResult.Milestones[i];
+                using (new EditorGUILayout.HorizontalScope(i % 2 == 0
+                    ? EditorStyles.helpBox
+                    : GUIStyle.none))
+                {
+                    DrawTableLabel($"Lv.{row.Level}", 90f);
+                    DrawTableLabel($"{row.ReachedPercent:0.0}%", 100f);
+                    DrawTableLabel(FormatRunCount(row.P10Runs), 100f);
+                    DrawTableLabel(FormatRunCount(row.MedianRuns), 100f);
+                    DrawTableLabel(FormatRunCount(row.P90Runs), 100f);
+                    DrawTableLabel(row.MedianDays >= 0f ? $"{row.MedianDays:0.0}일" : "-", 100f);
+                }
+            }
+
+            EditorGUILayout.Space(12f);
+            DrawSectionTitle("레벨별 도달 층과 종료 원인");
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            {
+                DrawTableLabel("레벨", 70f, true);
+                DrawTableLabel("표본 런", 85f, true);
+                DrawTableLabel("평균 XP", 85f, true);
+                DrawTableLabel("P10 층", 75f, true);
+                DrawTableLabel("P50 층", 75f, true);
+                DrawTableLabel("P90 층", 75f, true);
+                DrawTableLabel("HP 종료", 85f, true);
+                DrawTableLabel("시간 종료", 85f, true);
+            }
+
+            for (int i = 0; i < growthResult.Levels.Count; i++)
+            {
+                LevelGrowthLevelResult row = growthResult.Levels[i];
+                using (new EditorGUILayout.HorizontalScope(i % 2 == 0
+                    ? EditorStyles.helpBox
+                    : GUIStyle.none))
+                {
+                    DrawTableLabel($"Lv.{row.Level}", 70f);
+                    DrawTableLabel($"{row.Runs:N0}", 85f);
+                    DrawTableLabel($"{row.AverageExperience:0.0}", 85f);
+                    DrawTableLabel($"{row.P10Floor}F", 75f);
+                    DrawTableLabel($"{row.MedianFloor}F", 75f);
+                    DrawTableLabel($"{row.P90Floor}F", 75f);
+                    DrawTableLabel($"{row.LifeDepletedPercent:0.0}%", 85f);
+                    DrawTableLabel($"{row.TimeOverPercent:0.0}%", 85f);
+                }
+            }
+
+            for (int i = 0; i < growthResult.Warnings.Count; i++)
+            {
+                EditorGUILayout.HelpBox(growthResult.Warnings[i], MessageType.Warning);
+            }
+        }
+
+        private void DrawGrowthComparisonTable()
+        {
+            DrawSectionTitle("전체 캐릭터 반복 성장 비교");
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            {
+                DrawTableLabel("캐릭터", 130f, true);
+                DrawTableLabel("목표 도달", 90f, true);
+                DrawTableLabel("P10", 70f, true);
+                DrawTableLabel("P50", 70f, true);
+                DrawTableLabel("P90", 70f, true);
+                DrawTableLabel("P50 일수", 85f, true);
+                DrawTableLabel("최종 레벨", 85f, true);
+                DrawTableLabel("P50 층", 75f, true);
+                DrawTableLabel("P90 층", 75f, true);
+            }
+
+            for (int i = 0; i < growthResults.Count; i++)
+            {
+                LevelGrowthSimulationResult result = growthResults[i];
+                LevelGrowthMilestoneResult target = result.Milestones.LastOrDefault();
+                LevelGrowthCurvePoint final = result.Curve.LastOrDefault();
+                using (new EditorGUILayout.HorizontalScope(i % 2 == 0
+                    ? EditorStyles.helpBox
+                    : GUIStyle.none))
+                {
+                    DrawTableLabel(result.CharacterName, 130f);
+                    DrawTableLabel($"{target?.ReachedPercent ?? 0f:0.0}%", 90f);
+                    DrawTableLabel(FormatRunCount(target?.P10Runs ?? -1), 70f);
+                    DrawTableLabel(FormatRunCount(target?.MedianRuns ?? -1), 70f);
+                    DrawTableLabel(FormatRunCount(target?.P90Runs ?? -1), 70f);
+                    DrawTableLabel(
+                        target != null && target.MedianDays >= 0f
+                            ? $"{target.MedianDays:0.0}일"
+                            : "-",
+                        85f);
+                    DrawTableLabel($"Lv.{final?.MedianLevel ?? 0}", 85f);
+                    DrawTableLabel($"{final?.MedianFloor ?? 0}F", 75f);
+                    DrawTableLabel($"{final?.P90Floor ?? 0}F", 75f);
+                }
+            }
+
+            EditorGUILayout.HelpBox(
+                "아래 상세 카드와 그래프는 마지막으로 실행했거나 현재 선택한 캐릭터 결과입니다.",
+                MessageType.Info);
+        }
+
+        private static void DrawGrowthChart(
+            Rect rect,
+            LevelGrowthSimulationResult result)
+        {
+            EditorGUI.DrawRect(
+                rect,
+                EditorGUIUtility.isProSkin
+                    ? new Color(0.13f, 0.14f, 0.16f)
+                    : Color.white);
+            GUI.Box(rect, GUIContent.none);
+            if (Event.current.type != EventType.Repaint || result.Curve.Count == 0)
+            {
+                return;
+            }
+
+            Rect plot = new Rect(rect.x + 58f, rect.y + 38f, rect.width - 82f, rect.height - 78f);
+            int maximumLevel = Mathf.Max(
+                result.TargetLevel,
+                result.Curve.Max(point => point.P90Level));
+            for (int tick = 0; tick <= 4; tick++)
+            {
+                float y = plot.yMax - plot.height * tick / 4f;
+                EditorGUI.DrawRect(
+                    new Rect(plot.x, y, plot.width, 1f),
+                    EditorGUIUtility.isProSkin
+                        ? new Color(1f, 1f, 1f, 0.08f)
+                        : new Color(0f, 0f, 0f, 0.09f));
+                GUI.Label(
+                    new Rect(rect.x + 7f, y - 9f, 48f, 18f),
+                    $"Lv.{Mathf.RoundToInt(maximumLevel * tick / 4f)}",
+                    EditorStyles.miniLabel);
+            }
+
+            Vector3[] p10 = BuildGrowthSeries(plot, result.Curve, maximumLevel, point => point.P10Level);
+            Vector3[] p50 = BuildGrowthSeries(plot, result.Curve, maximumLevel, point => point.MedianLevel);
+            Vector3[] p90 = BuildGrowthSeries(plot, result.Curve, maximumLevel, point => point.P90Level);
+            Handles.BeginGUI();
+            Handles.color = new Color(0.55f, 0.62f, 0.7f);
+            Handles.DrawAAPolyLine(2f, p10);
+            Handles.color = new Color(0.15f, 0.65f, 0.46f);
+            Handles.DrawAAPolyLine(4f, p50);
+            Handles.color = new Color(0.16f, 0.47f, 0.82f);
+            Handles.DrawAAPolyLine(2f, p90);
+            Handles.EndGUI();
+            DrawLegend(rect, new[]
+            {
+                ("P10 레벨", new Color(0.55f, 0.62f, 0.7f)),
+                ("P50 레벨", new Color(0.15f, 0.65f, 0.46f)),
+                ("P90 레벨", new Color(0.16f, 0.47f, 0.82f))
+            });
+            GUI.Label(
+                new Rect(plot.x, plot.yMax + 8f, 80f, 18f),
+                "1회",
+                EditorStyles.miniLabel);
+            GUI.Label(
+                new Rect(plot.xMax - 80f, plot.yMax + 8f, 80f, 18f),
+                $"{result.MaxRuns}회",
+                EditorStyles.miniLabel);
+        }
+
+        private static Vector3[] BuildGrowthSeries(
+            Rect plot,
+            IReadOnlyList<LevelGrowthCurvePoint> points,
+            int maximumLevel,
+            Func<LevelGrowthCurvePoint, int> selector)
+        {
+            Vector3[] series = new Vector3[points.Count];
+            for (int i = 0; i < points.Count; i++)
+            {
+                float x = points.Count <= 1
+                    ? plot.center.x
+                    : Mathf.Lerp(plot.x, plot.xMax, i / (float)(points.Count - 1));
+                float y = Mathf.Lerp(
+                    plot.yMax,
+                    plot.y,
+                    Mathf.Clamp01(selector(points[i]) / (float)Mathf.Max(1, maximumLevel)));
+                series[i] = new Vector3(x, y);
+            }
+
+            return series;
         }
 
         private void DrawBandChart(Rect rect, LevelBalanceSimulationResult result)
@@ -650,7 +1041,8 @@ namespace LootUp.Editor.Balance
         private void DrawBandRow(LevelBalanceBandResult band, int index)
         {
             Rect rowRect = GUILayoutUtility.GetRect(0f, 28f, GUILayout.ExpandWidth(true));
-            bool recovery = band.Role.IndexOf("회복", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool recovery = band.Role.IndexOf("회복", StringComparison.OrdinalIgnoreCase) >= 0
+                || band.Role.IndexOf("recovery", StringComparison.OrdinalIgnoreCase) >= 0;
             if (recovery)
             {
                 EditorGUI.DrawRect(rowRect, new Color(0.15f, 0.65f, 0.46f, 0.12f));
@@ -664,21 +1056,17 @@ namespace LootUp.Editor.Balance
                         : new Color(0f, 0f, 0f, 0.035f));
             }
 
-            GUILayout.BeginArea(rowRect);
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                DrawTableLabel($"{band.StartFloor}~{band.EndFloor}", 70f);
-                DrawTableLabel(band.Role, 100f);
-                DrawTableLabel(band.EnemyCount.ToString(), 62f);
-                DrawTableLabel(band.DangerousLineCount.ToString(), 54f);
-                DrawTableLabel($"+{band.EnemySpeedBonus:0}", 62f);
-                DrawTableLabel($"{band.PressureIndex:0.0}", 68f);
-                DrawTableLabel($"{band.EnterRatePercent:0.0}%", 72f);
-                DrawTableLabel($"{band.ConditionalPassRatePercent:0.0}%", 72f);
-                DrawTableLabel($"x{band.SupportItemWeightMultiplier:0.00}", 78f);
-                DrawTableLabel($"{band.SupportItemSharePercent:0.0}%", 78f);
-            }
-            GUILayout.EndArea();
+            float x = rowRect.x;
+            DrawFixedCell(rowRect, ref x, $"{band.StartFloor}~{band.EndFloor}", 70f);
+            DrawFixedCell(rowRect, ref x, band.Role, 100f);
+            DrawFixedCell(rowRect, ref x, band.EnemyCount.ToString(), 62f);
+            DrawFixedCell(rowRect, ref x, band.DangerousLineCount.ToString(), 54f);
+            DrawFixedCell(rowRect, ref x, $"+{band.EnemySpeedBonus:0}", 62f);
+            DrawFixedCell(rowRect, ref x, $"{band.PressureIndex:0.0}", 68f);
+            DrawFixedCell(rowRect, ref x, $"{band.EnterRatePercent:0.0}%", 72f);
+            DrawFixedCell(rowRect, ref x, $"{band.ConditionalPassRatePercent:0.0}%", 72f);
+            DrawFixedCell(rowRect, ref x, $"x{band.SupportItemWeightMultiplier:0.00}", 78f);
+            DrawFixedCell(rowRect, ref x, $"{band.SupportItemSharePercent:0.0}%", 78f);
         }
 
         private void RunSelectedCharacter()
@@ -745,6 +1133,81 @@ namespace LootUp.Editor.Balance
             }
         }
 
+        private void RunGrowthSimulation()
+        {
+            try
+            {
+                LevelGrowthSimulationSettings settings = BuildGrowthSettings();
+                growthResult = new LevelGrowthSimulationEngine().Run(settings);
+                UpsertGrowthResult(settings, growthResult);
+                LevelGrowthMilestoneResult target = growthResult.Milestones.LastOrDefault();
+                statusMessage = target != null && target.MedianRuns >= 0
+                    ? $"{growthResult.CharacterName} 성장 분석 완료 · Lv.{growthResult.TargetLevel} P50 {target.MedianRuns:N0}회 ({target.MedianDays:0.0}일)"
+                    : $"{growthResult.CharacterName} 성장 분석 완료 · 설정 범위 내 목표 P50 미도달";
+                selectedTab = 4;
+                scrollPosition = Vector2.zero;
+                Repaint();
+            }
+            catch (Exception exception)
+            {
+                statusMessage = $"성장 분석 실패: {exception.Message}";
+                Debug.LogException(exception);
+            }
+        }
+
+        private void RunAllGrowthSimulations()
+        {
+            growthSettings.Clear();
+            growthResults.Clear();
+            try
+            {
+                LevelGrowthSimulationEngine engine = new LevelGrowthSimulationEngine();
+                for (int i = 0; i < characters.Count; i++)
+                {
+                    bool canceled = EditorUtility.DisplayCancelableProgressBar(
+                        "LootUp Growth Simulator",
+                        $"{characters[i].DisplayName} 반복 성장 계산 중",
+                        i / (float)Mathf.Max(1, characters.Count));
+                    if (canceled)
+                    {
+                        statusMessage = "전체 캐릭터 반복 성장이 취소되었습니다.";
+                        break;
+                    }
+
+                    LevelGrowthSimulationSettings settings = BuildGrowthSettings(characters[i]);
+                    LevelGrowthSimulationResult result = engine.Run(settings);
+                    growthSettings.Add(settings);
+                    growthResults.Add(result);
+                }
+
+                if (growthResults.Count > 0)
+                {
+                    int selectedIndex = growthResults.FindIndex(result =>
+                        selectedCharacter != null
+                        && string.Equals(
+                            result.CharacterId,
+                            selectedCharacter.CharacterId,
+                            StringComparison.OrdinalIgnoreCase));
+                    growthResult = growthResults[Mathf.Max(0, selectedIndex)];
+                    statusMessage =
+                        $"캐릭터 {growthResults.Count}종 반복 성장 완료 · 캐릭터당 {growthResult.Population:N0}명 x {growthResult.MaxRuns:N0}회";
+                    selectedTab = 4;
+                    scrollPosition = Vector2.zero;
+                }
+
+                Repaint();
+            }
+            catch (Exception exception)
+            {
+                statusMessage = $"전체 캐릭터 성장 분석 실패: {exception.Message}";
+                Debug.LogException(exception);
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+        }
+
         private void ExportReport()
         {
             try
@@ -761,6 +1224,60 @@ namespace LootUp.Editor.Balance
                 statusMessage = $"내보내기 실패: {exception.Message}";
                 Debug.LogException(exception);
             }
+        }
+
+        private void ExportGrowthReport()
+        {
+            try
+            {
+                lastExportPath = LevelGrowthReportExporter.Export(
+                    BuildGrowthSettings(),
+                    growthResult);
+                statusMessage = "성장 분석용 CSV·JSON·Markdown·SVG 리포트를 생성했습니다.";
+                Repaint();
+            }
+            catch (Exception exception)
+            {
+                statusMessage = $"성장 리포트 내보내기 실패: {exception.Message}";
+                Debug.LogException(exception);
+            }
+        }
+
+        private void ExportGrowthComparisonReport()
+        {
+            try
+            {
+                lastExportPath = LevelGrowthReportExporter.ExportComparison(
+                    growthSettings,
+                    growthResults);
+                statusMessage =
+                    $"캐릭터 {growthResults.Count}종 상세 자료와 통합 CSV·Markdown·SVG를 생성했습니다.";
+                Repaint();
+            }
+            catch (Exception exception)
+            {
+                statusMessage = $"통합 성장 리포트 내보내기 실패: {exception.Message}";
+                Debug.LogException(exception);
+            }
+        }
+
+        private void UpsertGrowthResult(
+            LevelGrowthSimulationSettings settings,
+            LevelGrowthSimulationResult result)
+        {
+            int index = growthResults.FindIndex(existing => string.Equals(
+                existing.CharacterId,
+                result.CharacterId,
+                StringComparison.OrdinalIgnoreCase));
+            if (index >= 0)
+            {
+                growthSettings[index] = settings;
+                growthResults[index] = result;
+                return;
+            }
+
+            growthSettings.Add(settings);
+            growthResults.Add(result);
         }
 
         private LevelBalanceSimulationSettings BuildSettings(
@@ -787,6 +1304,29 @@ namespace LootUp.Editor.Balance
                 BaseEnemyMaxSpeed = Mathf.Max(baseEnemyMinSpeed, baseEnemyMaxSpeed),
                 SpeedStepPerEnemy = Mathf.Max(0f, speedStepPerEnemy),
                 RisingAdvanceFloors = Mathf.Max(1, risingAdvanceFloors)
+            };
+        }
+
+        private LevelGrowthSimulationSettings BuildGrowthSettings()
+        {
+            return BuildGrowthSettings(selectedCharacter);
+        }
+
+        private LevelGrowthSimulationSettings BuildGrowthSettings(
+            CharacterDefinition character)
+        {
+            return new LevelGrowthSimulationSettings
+            {
+                RunSettings = BuildSettings(character),
+                StartingLevel = startingLevel,
+                StartingExperience = Mathf.Max(0, startingExperience),
+                TargetLevel = Mathf.Max(startingLevel, targetLevel),
+                MaxRuns = Mathf.Max(1, maxGrowthRuns),
+                Population = PopulationOptions[Mathf.Clamp(
+                    growthPopulationIndex,
+                    0,
+                    PopulationOptions.Length - 1)],
+                RunsPerDay = Mathf.Max(0.1f, runsPerDay)
             };
         }
 
@@ -908,6 +1448,24 @@ namespace LootUp.Editor.Balance
                 value,
                 isHeader ? EditorStyles.miniBoldLabel : EditorStyles.miniLabel,
                 GUILayout.Width(width));
+        }
+
+        private static void DrawFixedCell(
+            Rect rowRect,
+            ref float x,
+            string value,
+            float width)
+        {
+            EditorGUI.LabelField(
+                new Rect(x + 2f, rowRect.y + 4f, width - 4f, 20f),
+                value,
+                EditorStyles.miniLabel);
+            x += width;
+        }
+
+        private static string FormatRunCount(int value)
+        {
+            return value >= 0 ? $"{value:N0}회" : "-";
         }
 
         private static void DrawKeyValue(string key, string value)

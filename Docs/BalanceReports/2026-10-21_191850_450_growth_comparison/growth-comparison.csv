@@ -1,0 +1,5 @@
+CharacterId,CharacterName,TargetLevel,ReachedPercent,P10Runs,MedianRuns,P90Runs,MedianDays,FinalMedianLevel,FinalMedianFloor,FinalP90Floor
+"alice","Alice",20,0,-1,-1,-1,-1,17,26,40
+"default","Agent X",20,0,-1,-1,-1,-1,16,17,24
+"landy","Landy",20,0,-1,-1,-1,-1,17,21,30
+"ninja","Ninja",20,0,-1,-1,-1,-1,18,33,56

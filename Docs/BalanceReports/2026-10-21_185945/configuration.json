@@ -1,0 +1,18 @@
+{
+    "generatedAt": "2026-10-21T18:59:45.3728665+09:00",
+    "difficultyAsset": "Assets/_Project/Data/Difficulty/DifficultyBandsV02.asset",
+    "itemTableAsset": "Assets/_Project/Data/Tables/Items.csv",
+    "skillProfile": "Standard",
+    "characterLevel": 1,
+    "iterations": 5000,
+    "maximumFloor": 130,
+    "seed": 20261020,
+    "initialTimeSeconds": 90.0,
+    "columnsPerFloor": 7.0,
+    "elevatorSecondsPerFloor": 1.100000023841858,
+    "itemsPerFloor": 0.6000000238418579,
+    "baseEnemyMinSpeed": 130.0,
+    "baseEnemyMaxSpeed": 360.0,
+    "speedStepPerEnemy": 22.0,
+    "risingAdvanceFloors": 10
+}

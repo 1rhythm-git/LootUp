@@ -1,0 +1,13 @@
+{
+    "generatedAt": "2026-10-21T19:18:50.5824400+09:00",
+    "characterId": "landy",
+    "skillProfile": "Standard",
+    "startingLevel": 1,
+    "startingExperience": 0,
+    "targetLevel": 20,
+    "maxRuns": 200,
+    "population": 300,
+    "runsPerDay": 3.0,
+    "seed": 20261020,
+    "maximumFloor": 130
+}

@@ -6786,3 +6786,175 @@ ________________________________________
 
 작업 기준:
 • 최우선 예약 명세와 일정 재배치 완료분 0.25시간을 `DESIGN` Done으로 기록한다.
+
+________________________________________
+
+## 2026-10-21 시뮬레이터 V1.1 구현
+
+완료 내용:
+• `구간 분석`과 캐릭터 비교 표의 ScrollView 내부 `BeginArea` 행을 고정 좌표 셀 렌더링으로 교체하고 탭 전환 시 스크롤 위치를 초기화했다.
+• 영문 `Recovery`와 한국어 `회복` 역할을 동일한 회복 구간 강조 대상으로 처리했다.
+• 가상 플레이어별 반복 런에서 실제 `RunRewardCalculator` XP를 누적하고 `CharacterDefinition` 필요 XP로 레벨업한 뒤 다음 런에 레벨과 스킬 해금 상태를 승계하도록 구현했다.
+• 성장 탭에 목표 레벨 도달률, P10·P50·P90 필요 런 수와 예상 일수, 반복 성장 곡선, 레벨별 도달 층·HP/시간 종료 표를 추가했다.
+• 성장 원본 런·곡선·레벨 요약 CSV, 설정 JSON, Markdown 요약과 SVG 성장 곡선을 내보내도록 구성했다.
+• 일반 런 리포트에도 `GameplayScore`와 `RemainingHearts`를 기록해 실제 XP 재계산 근거를 보존했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Editor/Balance/LevelBalanceSimulation.cs`
+• `Assets/_Project/Scripts/Editor/Balance/LevelBalanceSimulatorWindow.cs`
+• `Assets/_Project/Scripts/Editor/Balance/LevelGrowthSimulation.cs`
+• `Docs/00_MASTER_PROJECT_BRIEF.md`
+• `Docs/04_CODEX_EXECUTION_PLAN.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+
+검증 결과:
+• Unity 6.3.17f1이 생성한 `Assembly-CSharp-Editor.rsp`에 신규 파일을 포함해 동일 Roslyn 컴파일을 수행했고 오류 없이 통과했다.
+• 기존 난도·아이템·RISING 흐름을 유지하면서 캐릭터 아이템 스킬을 레벨 조건에 따라 가상 런에 반영하도록 정적 확인했다.
+• `git diff --check` 기준 공백 오류가 없음을 확인했다.
+
+남은 확인:
+• Editor에서 `구간 분석` 13개 행과 회복 강조가 실제로 모두 표시되는지 확인해야 한다.
+• 성장 분석을 기본값으로 실행해 목표 레벨·성장 곡선·레벨별 표가 표시되는지 확인해야 한다.
+• 성장 리포트 6종을 내보내 동일 Seed 재현과 XP·마일스톤·레벨별 층 집계를 재계산해야 한다.
+
+다음 작업:
+• 재시작 최우선 1: Editor 시각 확인과 기본 성장 시뮬레이션 실행을 완료한다.
+• 재시작 최우선 2: 내보낸 성장 리포트를 Codex로 재계산한 뒤 V1.1을 Done으로 전환한다.
+
+작업 기준:
+• 표준 2.0시간 중 UI 복구, 성장 엔진·시각화·내보내기와 컴파일 완료분 1.8시간을 `DESIGN` Partial로 기록하고 실제 창·리포트 검증 0.2시간을 남긴다.
+
+________________________________________
+
+## 2026-10-21 시뮬레이터 V1.1 실행 검증 및 Ninja 성장 분석
+
+완료 내용:
+• 사용자가 Editor에서 구간 분석과 성장 분석 표시를 확인했다.
+• Ninja Standard, Lv.1/XP 0, 목표 Lv.20, 300명 x 200회 리포트 6종을 확인했다.
+• 60,000개 원본 런을 재계산해 Sample당 200런, 중복 0건, 런 간 레벨·XP 승계 오류 0건을 확인했다.
+• 레벨 요약 CSV의 표본 수, P10·P50·P90 층을 원본에서 재계산해 불일치 0건을 확인했다.
+• 설정 JSON과 성장 SVG 파싱, XP·레벨·층·종료 사유 유효성을 확인했다.
+
+분석 결과:
+• Ninja의 P50 도달은 Lv.5 5회, Lv.10 28회, Lv.15 97회이며 Lv.20은 200회 내 도달자가 없었다.
+• 200회 종료 시 279명은 Lv.18, 21명은 Lv.19였다.
+• 최근 XP 유지 단순 외삽은 Lv.20 P50 약 248회를 가리키지만 실제 범위 밖 추정이므로 최대 300회 재실행이 필요하다.
+• Lv.1~18의 P50 도달 층은 모두 32F다. 현재 XP 레벨이 스탯을 높이지 않고 Ninja 스킬이 Lv.20에 해금되므로 성장 체감이 없는 구조와 일치한다.
+• 저장소에는 Ninja 성장 폴더만 존재하며 Alice, Agent X, Landy 성장 리포트는 확인되지 않았다.
+
+변경된 주요 파일:
+• `Docs/BalanceReports/2026-10-21_185953_growth/codex-analysis.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/Images/google-play-progress-gauges.svg`
+• `Docs/Images/google-play-roadmap-timeline.svg`
+
+남은 확인:
+• Alice, Agent X, Landy를 Ninja와 동일한 조건으로 각각 실행·내보내야 한다.
+• 스킬 해금 전후 비교를 위해 최대 런 수를 300회로 높여 Ninja를 다시 실행한다.
+• 4종 리포트가 모일 때까지 성장 속도나 XP 요구량을 변경하지 않는다.
+
+다음 작업:
+• 동일 조건 캐릭터 4종 반복 성장 비교 리포트를 확보하고 스킬 해금 전후 격차를 분석한다.
+
+작업 기준:
+• Editor 시각 확인과 Ninja 리포트 재계산 완료분 0.2시간을 추가해 `DESIGN-LEVEL-SIMULATOR-V11` 2.0시간을 Done으로 전환한다.
+
+________________________________________
+
+## 2026-10-21 전체 캐릭터 반복 성장 및 통합 리포트
+
+완료 내용:
+• 기존 단일 캐릭터 성장 실행·내보내기를 유지하면서 `전체 캐릭터 반복 성장`과 `통합 성장 리포트 내보내기` 버튼을 추가했다.
+• 같은 시작 레벨·XP, 목표 레벨, 표본 수, 최대 런, 일일 플레이와 Seed를 캐릭터 전체에 적용한다.
+• 전체 실행 결과를 성장 탭 비교표에 표시하고 캐릭터 선택 변경 시 상세 카드·그래프도 해당 결과로 전환한다.
+• 통합 폴더 아래 캐릭터 ID별 상세 폴더를 만들고 설정 JSON, 원본 런·곡선·레벨 CSV, Markdown과 SVG를 각각 저장하도록 구성했다.
+• 통합 루트에는 목표 도달률·P10/P50/P90 런 수·최종 레벨·도달 층 비교 CSV, Markdown과 SVG를 생성한다.
+• 단일 성장 폴더명에 밀리초와 캐릭터 ID를 포함해 연속 내보내기 충돌 가능성을 줄였다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Editor/Balance/LevelGrowthSimulation.cs`
+• `Assets/_Project/Scripts/Editor/Balance/LevelBalanceSimulatorWindow.cs`
+• `Docs/05_WORK_LOG.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/Images/google-play-progress-gauges.svg`
+• `Docs/Images/google-play-roadmap-timeline.svg`
+
+검증 결과:
+• Unity 6.3.17f1의 실제 Editor 응답 파일을 사용한 Roslyn 컴파일을 오류 없이 통과했다.
+• `git diff --check`에서 공백 오류가 없음을 확인했다.
+• 기존 개별 성장 실행·내보내기 진입점은 유지했다.
+
+남은 확인:
+• Editor에서 전체 캐릭터 반복 성장을 실행해 비교표 4행을 확인해야 한다.
+• 통합 내보내기 후 캐릭터별 4개 하위 폴더와 비교 파일 3종을 확인해야 한다.
+• 통합 CSV와 개별 요약의 목표 레벨 수치가 일치하는지 재계산해야 한다.
+
+다음 작업:
+• 전체 캐릭터 일괄 실행·통합 내보내기 수동 검증 0.1시간을 완료한다.
+
+작업 기준:
+• 표준 0.5시간 중 구현·컴파일 완료분 0.4시간을 `DESIGN` Partial로 기록하고 실제 통합 리포트 검증 0.1시간을 남긴다.
+
+________________________________________
+
+## 2026-10-21 전체 캐릭터 통합 성장 리포트 검증
+
+완료 내용:
+• 통합 폴더의 `alice`, `default`, `landy`, `ninja` 상세 폴더와 루트 비교 CSV·Markdown·SVG를 확인했다.
+• 캐릭터별 60,000런, 총 240,000런의 중복과 런 간 레벨·XP 승계를 재계산했다.
+• 통합 CSV의 최종 P50 레벨, P50 층과 P90 층을 각 캐릭터 원본에서 재계산했다.
+• 설정 JSON 4개와 SVG 5개의 파싱을 확인했다.
+
+검증 결과:
+• `(Sample, Run)` 중복 0건, XP·레벨 승계 오류 0건, 통합 비교값 불일치 0건이다.
+• P50 Lv.15 도달은 Ninja 97회, Alice 112회, Landy 133회, Agent X 158회다.
+• 200회 P50 레벨은 Ninja 18, Alice·Landy 17, Agent X 16이며 Lv.20 도달률은 전 캐릭터 0%다.
+• 200회 P50 층은 Ninja 33F, Alice 26F, Landy 21F, Agent X 17F다.
+• 기본 성능 차이가 층·점수 XP 차이로 이어져 캐릭터 간 성장 속도 격차를 확대한다.
+
+변경된 주요 파일:
+• `Docs/BalanceReports/2026-10-21_191850_450_growth_comparison/codex-analysis.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/Images/google-play-progress-gauges.svg`
+• `Docs/Images/google-play-roadmap-timeline.svg`
+
+남은 확인:
+• XP 레벨을 스킬 해금 전용으로 유지할지 소규모 스탯 성장을 포함할지 결정해야 한다.
+• 스킬 해금 목표 기간을 확정한 뒤 Lv.20 필요 XP와 기본·층·점수 XP 비중을 조정한다.
+• 수치 변경 전 캐릭터별 대표 시간 종료 구간을 실제 Editor·APK 런으로 대조한다.
+
+다음 작업:
+• 성장 통합 분석을 기준으로 XP 레벨 역할과 스킬 해금 목표 기간을 설계한다.
+
+작업 기준:
+• 통합 폴더 구조·240,000런 재계산 완료분 0.1시간을 추가해 `DESIGN-GROWTH-COMPARISON-EXPORT` 0.5시간을 Done으로 전환한다.
+
+________________________________________
+
+## 2026-10-21 일일 작업 마무리
+
+완료 내용:
+• 통합 성장 시뮬레이터 구현, 캐릭터 4종 통합 리포트와 분석 문서를 오늘 작업 결과로 확정했다.
+• 향후 일일 작업 마무리는 `문서 업데이트 -> 일정 업데이트 -> Git 업데이트 -> 일정 및 진척률 보고` 순서로 수행하도록 `AGENTS.md`에 규칙을 추가했다.
+• 로드맵, 진척률 원장과 시각화 자료를 통합 성장 리포트 검증 완료 상태로 동기화했다.
+
+검증 결과:
+• 캐릭터 4종 총 240,000런의 중복·성장 승계·통합 비교 재계산을 통과했다.
+• `Tools/Measure-ReleaseProgress.ps1` 기준 당일 250.0%, 주간 144.0%, 누적 출시 13.8%다.
+
+남은 이슈:
+• XP 레벨의 역할과 캐릭터별 스킬 해금 목표 기간 결정은 다음 작업으로 유지한다.
+• 대표 Editor·APK 플레이 결과와 시뮬레이션 대조는 밸런스 수치 확정 전에 수행한다.
+
+작업 기준:
+• 마무리 절차 표준화는 `OUT_OF_SCOPE` 0시간으로 기록하며 출시 누적 진척률에는 반영하지 않는다.

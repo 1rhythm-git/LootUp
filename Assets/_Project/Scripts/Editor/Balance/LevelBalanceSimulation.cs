@@ -5,7 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using LootUp.Core.Characters;
+using LootUp.Core.Characters.Skills;
 using LootUp.Core.Enemies;
+using LootUp.Core.Game;
 using LootUp.Core.Items;
 using UnityEditor;
 using UnityEngine;
@@ -50,6 +52,8 @@ namespace LootUp.Editor.Balance
         public int SupportItems;
         public int GameMoney;
         public int RisingActivations;
+        public int GameplayScore;
+        public int RemainingHearts;
         public float RemainingTime;
     }
 
@@ -173,7 +177,7 @@ namespace LootUp.Editor.Balance
             return result;
         }
 
-        private static LevelBalanceRunResult SimulateRun(
+        internal static LevelBalanceRunResult SimulateRun(
             int runIndex,
             LevelBalanceSimulationSettings settings,
             ItemTable itemTable,
@@ -192,8 +196,11 @@ namespace LootUp.Editor.Balance
             int supportItems = 0;
             int gameMoney = 0;
             int risingActivations = 0;
+            int gameplayScore = 0;
             int risingMisses = 0;
             float risingSpawnBonus = 0f;
+            float skillSpeedBonusPercent = 0f;
+            float skillSpeedRemaining = 0f;
             bool[] risingLetters = new bool[RisingLetterCount];
 
             while (currentFloor <= maximumFloor && life > 0 && remainingTime > 0f)
@@ -205,7 +212,12 @@ namespace LootUp.Editor.Balance
                     break;
                 }
 
-                float moveSpeed = Mathf.Max(0.1f, character.MoveSpeedColumnsPerSecond);
+                float activeSkillSpeedMultiplier = skillSpeedRemaining > 0f
+                    ? 1f + skillSpeedBonusPercent * 0.01f
+                    : 1f;
+                float moveSpeed = Mathf.Max(
+                    0.1f,
+                    character.MoveSpeedColumnsPerSecond * activeSkillSpeedMultiplier);
                 float floorSeconds = (
                     Mathf.Max(1f, settings.ColumnsPerFloor) / moveSpeed
                     + Mathf.Max(0f, settings.ElevatorSecondsPerFloor)
@@ -217,6 +229,10 @@ namespace LootUp.Editor.Balance
                     floorSeconds *= 0.82f;
                     feverRemaining = Mathf.Max(0f, feverRemaining - floorSeconds);
                 }
+
+                skillSpeedRemaining = Mathf.Max(
+                    0f,
+                    skillSpeedRemaining - floorSeconds);
 
                 remainingTime -= floorSeconds;
                 if (remainingTime <= 0f)
@@ -253,18 +269,26 @@ namespace LootUp.Editor.Balance
                     ref remainingTime,
                     ref feverGauge,
                     ref supportItems,
-                    ref gameMoney);
+                    ref gameMoney,
+                    ref gameplayScore,
+                    ref skillSpeedBonusPercent,
+                    ref skillSpeedRemaining);
 
                 if ((currentFloor - 1) % 10 == 0
                     && random.NextDouble() <= character.ItemChance)
                 {
                     SimulateItemChanceReward(
                         currentFloor,
+                        settings.Character,
+                        settings.CharacterLevel,
                         itemTable,
                         profile,
                         random,
                         ref remainingTime,
-                        ref supportItems);
+                        ref supportItems,
+                        ref gameplayScore,
+                        ref skillSpeedBonusPercent,
+                        ref skillSpeedRemaining);
                 }
 
                 feverGauge += Mathf.Max(0f, character.FeverGainPerColumn)
@@ -342,6 +366,8 @@ namespace LootUp.Editor.Balance
                 SupportItems = supportItems,
                 GameMoney = gameMoney,
                 RisingActivations = risingActivations,
+                GameplayScore = gameplayScore,
+                RemainingHearts = Mathf.Max(0, life),
                 RemainingTime = Mathf.Max(0f, remainingTime)
             };
         }
@@ -356,7 +382,10 @@ namespace LootUp.Editor.Balance
             ref float remainingTime,
             ref float feverGauge,
             ref int supportItems,
-            ref int gameMoney)
+            ref int gameMoney,
+            ref int gameplayScore,
+            ref float skillSpeedBonusPercent,
+            ref float skillSpeedRemaining)
         {
             float expectedAttempts = Mathf.Max(0f, settings.ItemsPerFloor);
             int attempts = Mathf.FloorToInt(expectedAttempts);
@@ -379,23 +408,32 @@ namespace LootUp.Editor.Balance
                     random);
                 ApplyItem(
                     item,
-                    settings.Character.MaxLife,
+                    settings.Character,
+                    settings.CharacterLevel,
                     random,
                     ref life,
                     ref remainingTime,
                     ref feverGauge,
                     ref supportItems,
-                    ref gameMoney);
+                    ref gameMoney,
+                    ref gameplayScore,
+                    ref skillSpeedBonusPercent,
+                    ref skillSpeedRemaining);
             }
         }
 
         private static void SimulateItemChanceReward(
             int floor,
+            CharacterDefinition character,
+            int characterLevel,
             ItemTable itemTable,
             SimulationProfileValues profile,
             System.Random random,
             ref float remainingTime,
-            ref int supportItems)
+            ref int supportItems,
+            ref int gameplayScore,
+            ref float skillSpeedBonusPercent,
+            ref float skillSpeedRemaining)
         {
             if (random.NextDouble() > profile.ItemPickupChance)
             {
@@ -414,6 +452,16 @@ namespace LootUp.Editor.Balance
             {
                 remainingTime += Mathf.Max(0, selected.EffectValue);
                 supportItems++;
+                TryApplyCharacterSkill(
+                    itemType: selected.ItemType,
+                    acquiredValue: selected.EffectValue,
+                    character: character,
+                    characterLevel: characterLevel,
+                    random: random,
+                    remainingTime: ref remainingTime,
+                    gameplayScore: ref gameplayScore,
+                    skillSpeedBonusPercent: ref skillSpeedBonusPercent,
+                    skillSpeedRemaining: ref skillSpeedRemaining);
             }
         }
 
@@ -482,13 +530,17 @@ namespace LootUp.Editor.Balance
 
         private static void ApplyItem(
             ItemDefinition item,
-            int maximumLife,
+            CharacterDefinition character,
+            int characterLevel,
             System.Random random,
             ref int life,
             ref float remainingTime,
             ref float feverGauge,
             ref int supportItems,
-            ref int gameMoney)
+            ref int gameMoney,
+            ref int gameplayScore,
+            ref float skillSpeedBonusPercent,
+            ref float skillSpeedRemaining)
         {
             if (item == null)
             {
@@ -510,12 +562,83 @@ namespace LootUp.Editor.Balance
                     break;
                 case ItemType.Heal:
                     life = Mathf.Min(
-                        Mathf.Max(1, maximumLife),
+                        Mathf.Max(1, character.MaxLife),
                         life + Mathf.Max(0, item.EffectValue));
                     break;
                 case ItemType.Currency:
                     gameMoney += Mathf.Max(0, item.EffectValue);
                     break;
+                case ItemType.Score:
+                    gameplayScore += Mathf.Max(0, item.EffectValue);
+                    break;
+            }
+
+            TryApplyCharacterSkill(
+                item.ItemType,
+                item.EffectValue,
+                character,
+                characterLevel,
+                random,
+                ref remainingTime,
+                ref gameplayScore,
+                ref skillSpeedBonusPercent,
+                ref skillSpeedRemaining);
+        }
+
+        private static void TryApplyCharacterSkill(
+            ItemType itemType,
+            int acquiredValue,
+            CharacterDefinition character,
+            int characterLevel,
+            System.Random random,
+            ref float remainingTime,
+            ref int gameplayScore,
+            ref float skillSpeedBonusPercent,
+            ref float skillSpeedRemaining)
+        {
+            CharacterSkillDefinition skill = character != null
+                ? character.CharacterSkill
+                : null;
+            if (skill == null
+                || characterLevel < skill.UnlockLevel
+                || !MatchesSkillTrigger(skill.TriggerType, itemType)
+                || random.NextDouble() * 100f > skill.P1)
+            {
+                return;
+            }
+
+            switch (skill.EffectType)
+            {
+                case CharacterSkillEffectType.AddBonusScorePercent:
+                    gameplayScore += Mathf.FloorToInt(
+                        Mathf.Max(0, acquiredValue) * skill.P2 * 0.01f);
+                    break;
+                case CharacterSkillEffectType.AddTimedMoveSpeedPercent:
+                    skillSpeedRemaining = Mathf.Max(skillSpeedRemaining, skill.P2);
+                    skillSpeedBonusPercent = Mathf.Max(
+                        skillSpeedBonusPercent,
+                        skill.P3);
+                    break;
+                case CharacterSkillEffectType.AddTime:
+                    remainingTime += skill.P2;
+                    break;
+            }
+        }
+
+        private static bool MatchesSkillTrigger(
+            CharacterSkillTriggerType triggerType,
+            ItemType itemType)
+        {
+            switch (triggerType)
+            {
+                case CharacterSkillTriggerType.ScoreItemAcquired:
+                    return itemType == ItemType.Score;
+                case CharacterSkillTriggerType.TimeItemAcquired:
+                    return itemType == ItemType.Time;
+                case CharacterSkillTriggerType.HeartItemAcquired:
+                    return itemType == ItemType.Heal;
+                default:
+                    return false;
             }
         }
 
@@ -767,7 +890,7 @@ namespace LootUp.Editor.Balance
             return sorted[index];
         }
 
-        private static SimulationProfileValues ResolveProfile(
+        internal static SimulationProfileValues ResolveProfile(
             SimulationSkillProfile profile)
         {
             switch (profile)
@@ -781,7 +904,7 @@ namespace LootUp.Editor.Balance
             }
         }
 
-        private static void Validate(LevelBalanceSimulationSettings settings)
+        internal static void Validate(LevelBalanceSimulationSettings settings)
         {
             if (settings == null)
             {
@@ -893,7 +1016,7 @@ namespace LootUp.Editor.Balance
         {
             StringBuilder builder = new StringBuilder();
             builder.AppendLine(
-                "CharacterId,CharacterName,Level,SkillProfile,RunIndex,HighestFloor,EndReason,Hits,SupportItems,GameMoney,RisingActivations,RemainingTime");
+                "CharacterId,CharacterName,Level,SkillProfile,RunIndex,HighestFloor,EndReason,Hits,SupportItems,GameMoney,RisingActivations,GameplayScore,RemainingHearts,RemainingTime");
             for (int i = 0; i < results.Count; i++)
             {
                 LevelBalanceSimulationResult result = results[i];
@@ -911,6 +1034,8 @@ namespace LootUp.Editor.Balance
                         .Append(run.SupportItems).Append(',')
                         .Append(run.GameMoney).Append(',')
                         .Append(run.RisingActivations).Append(',')
+                        .Append(run.GameplayScore).Append(',')
+                        .Append(run.RemainingHearts).Append(',')
                         .AppendLine(run.RemainingTime.ToString("0.###", CultureInfo.InvariantCulture));
                 }
             }

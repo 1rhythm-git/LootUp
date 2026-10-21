@@ -18,3 +18,6 @@ Date,TaskId,Workstream,Description,EstimatedHours,EarnedHours,State,Reference
 2026-10-20,DESIGN-GROWTH-DIFFICULTY-AUDIT,DESIGN,"캐릭터 성장 반영 난도 감사 및 진척 시각화 동기화",0.25,0.25,Done,"성장 기준군·무강화 통과 원칙 확정 및 게이지 갱신 / Docs/10_LEVEL_BM_DESIGN_DRAFT.md"
 2026-10-20,DESIGN-LEVEL-SIMULATOR-MVP,DESIGN,"실데이터 기반 레벨 밸런스 시뮬레이터 및 Editor 시각화",1.5,1.5,Done,"캐릭터 4종 각 5000회·총 20000행 리포트 5종 생성 및 재계산 검증 / Docs/BalanceReports/2026-10-20_205047 / 소표본 자동 경고 방지 보완"
 2026-10-20,DESIGN-SIMULATOR-NEXT-SPEC,DESIGN,"구간 분석 UI 및 반복 플레이 XP·레벨 성장 시뮬레이터 V1.1 예약 명세",0.25,0.25,Done,"재시작 최우선·입출력·완료 조건·G1 일정 반영 / Docs/04_CODEX_EXECUTION_PLAN.md / Docs/10_LEVEL_BM_DESIGN_DRAFT.md"
+2026-10-21,DESIGN-LEVEL-SIMULATOR-V11,DESIGN,"구간 분석 UI 복구 및 반복 플레이 XP·레벨 성장 시뮬레이터 V1.1",2.0,2.0,Done,"Editor 시각 확인 / Ninja 300명 x 200런 60000행 중복·승계·요약 재계산 검증 완료 / Docs/BalanceReports/2026-10-21_185953_growth/codex-analysis.md"
+2026-10-21,DESIGN-GROWTH-COMPARISON-EXPORT,DESIGN,"전체 캐릭터 반복 성장 실행 및 통합 비교 리포트",0.5,0.5,Done,"4종 x 60000런 총 240000행 중복·승계 오류 0건 / 통합 CSV·Markdown·SVG와 캐릭터별 상세 폴더 검증 / Docs/BalanceReports/2026-10-21_191850_450_growth_comparison/codex-analysis.md"
+2026-10-21,OUT_OF_SCOPE-CLOSING-PROTOCOL,OUT_OF_SCOPE,"일일 작업 마무리 절차 표준화",0.0,0.0,Done,"문서 업데이트 -> 일정 업데이트 -> Git 업데이트 -> 일정 및 진척률 보고 순서 고정 / AGENTS.md"
