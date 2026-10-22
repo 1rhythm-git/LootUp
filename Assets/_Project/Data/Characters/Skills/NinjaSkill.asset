@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   skillId: ninja_score_time
   displayName: Time Steal
-  unlockLevel: 20
+  unlockLevel: 5
   triggerType: 0
   effectType: 2
   description: On score item acquisition, P1% chance to gain P2 seconds of Time.

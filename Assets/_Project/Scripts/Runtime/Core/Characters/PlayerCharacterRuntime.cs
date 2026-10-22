@@ -81,13 +81,15 @@ namespace LootUp.Core.Characters
         public void AddMoveDistanceColumns(float movedColumns)
         {
             float gainPerColumn = characterDefinition != null ? characterDefinition.FeverGainPerColumn : 0f;
-            AddFeverGauge(Mathf.Max(0f, movedColumns) * gainPerColumn);
+            AddFeverGauge(CharacterLevelGrowthPolicy.ApplyFeverGain(
+                Mathf.Max(0f, movedColumns) * gainPerColumn,
+                Progression.Level));
         }
 
         public void AddPivotCharge()
         {
             float gain = characterDefinition != null ? characterDefinition.FeverGainPerPivot : 0f;
-            AddFeverGauge(gain);
+            AddFeverGauge(CharacterLevelGrowthPolicy.ApplyFeverGain(gain, Progression.Level));
         }
 
         public void FillFeverGaugeForTest()
@@ -107,8 +109,11 @@ namespace LootUp.Core.Characters
                 return 0f;
             }
 
-            float addedAmount = Mathf.Min(amount, Mathf.Max(0f, FeverGaugeMax - feverGauge));
-            AddFeverGauge(amount);
+            float adjustedAmount = CharacterLevelGrowthPolicy.ApplySupportItemEffect(
+                amount,
+                Progression.Level);
+            float addedAmount = Mathf.Min(adjustedAmount, Mathf.Max(0f, FeverGaugeMax - feverGauge));
+            AddFeverGauge(adjustedAmount);
             return addedAmount;
         }
 

@@ -1,3 +1,4 @@
+using LootUp.Core.Characters;
 using UnityEngine;
 
 namespace LootUp.Core.Items
@@ -17,15 +18,21 @@ namespace LootUp.Core.Items
             }
 
             int passCount = Mathf.Max(1, context.RequiredPassCount);
-            int timeAmount = Mathf.Max(0, definition.EffectValue * passCount);
+            int characterLevel = context.PlayerCharacterRuntime != null
+                ? context.PlayerCharacterRuntime.Progression.Level
+                : 1;
+            float timeAmount = CharacterLevelGrowthPolicy.ApplySupportItemEffect(
+                Mathf.Max(0, definition.EffectValue * passCount),
+                characterLevel);
             if (ArtifactEffectResolver.RollPercent(ArtifactEffectResolver.Resolve().TimeItemDoubleChancePercent))
             {
                 timeAmount *= 2;
             }
 
             context.TopHUDController.AddTime(timeAmount);
-            context.TopHUDController.SetItemStatus($"+{timeAmount}s TIME");
-            return new ItemEffectResult(ItemEffectOutcome.TimeAdded, timeAmount);
+            int displayedAmount = Mathf.RoundToInt(timeAmount);
+            context.TopHUDController.SetItemStatus($"+{displayedAmount}s TIME");
+            return new ItemEffectResult(ItemEffectOutcome.TimeAdded, displayedAmount);
         }
     }
 }

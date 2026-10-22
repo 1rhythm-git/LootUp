@@ -122,6 +122,8 @@ namespace LootUp.Core.UI
         private CharacterDefinition activeCharacterDefinition;
         private PlayerMotor playerMotor;
         private float remainingSeconds;
+        private float startingTimeGrowthBonusSeconds;
+        private bool startingTimeGrowthApplied;
         private float currentFeverGaugeNormalized;
         private bool timerPaused;
         private bool gameOverRequested;
@@ -343,6 +345,13 @@ namespace LootUp.Core.UI
             activeCharacterDefinition = definition;
             CharacterProgressionSnapshot progression = CharacterProgressionState.GetSnapshot(definition);
             characterLevel = progression.Level;
+            if (!startingTimeGrowthApplied)
+            {
+                startingTimeGrowthBonusSeconds = CharacterLevelGrowthPolicy.GetStartingTimeBonusSeconds(
+                    progression.Level);
+                remainingSeconds += startingTimeGrowthBonusSeconds;
+                startingTimeGrowthApplied = true;
+            }
             characterPortrait = CreateInGamePortraitSprite(definition);
             maxHearts = Mathf.Max(1, definition.MaxLife);
             currentHearts = maxHearts;
@@ -384,7 +393,9 @@ namespace LootUp.Core.UI
         [ContextMenu("Debug/Reset Timer")]
         private void DebugResetTimer()
         {
-            remainingSeconds = Mathf.Max(0f, runDurationSeconds);
+            remainingSeconds = Mathf.Max(
+                0f,
+                runDurationSeconds + startingTimeGrowthBonusSeconds);
             timerPaused = false;
             gameOverRequested = false;
             RefreshTimer();

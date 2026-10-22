@@ -21,3 +21,7 @@ Date,TaskId,Workstream,Description,EstimatedHours,EarnedHours,State,Reference
 2026-10-21,DESIGN-LEVEL-SIMULATOR-V11,DESIGN,"구간 분석 UI 복구 및 반복 플레이 XP·레벨 성장 시뮬레이터 V1.1",2.0,2.0,Done,"Editor 시각 확인 / Ninja 300명 x 200런 60000행 중복·승계·요약 재계산 검증 완료 / Docs/BalanceReports/2026-10-21_185953_growth/codex-analysis.md"
 2026-10-21,DESIGN-GROWTH-COMPARISON-EXPORT,DESIGN,"전체 캐릭터 반복 성장 실행 및 통합 비교 리포트",0.5,0.5,Done,"4종 x 60000런 총 240000행 중복·승계 오류 0건 / 통합 CSV·Markdown·SVG와 캐릭터별 상세 폴더 검증 / Docs/BalanceReports/2026-10-21_191850_450_growth_comparison/codex-analysis.md"
 2026-10-21,OUT_OF_SCOPE-CLOSING-PROTOCOL,OUT_OF_SCOPE,"일일 작업 마무리 절차 표준화",0.0,0.0,Done,"문서 업데이트 -> 일정 업데이트 -> Git 업데이트 -> 일정 및 진척률 보고 순서 고정 / AGENTS.md"
+2026-10-22,DESIGN-XP-LEVEL-ROLE,DESIGN,"XP 레벨 역할·제한 성장 정책·보상 곡선 V0.2",1.0,1.0,Done,"CharacterLevelGrowthPolicy / Lv.5 공통 스킬 해금 / 성과 XP 상한 / 4종 240000런 Lv.20 P50 154~171회·승계 오류 0건 / Docs/BalanceReports/2026-10-22_180310_518_growth_comparison/codex-analysis.md"
+2026-10-22,DESIGN-CHARACTER-CADENCE,DESIGN,"초기 출시 캐릭터 수와 라이브 신규 캐릭터 주기 설계",0.5,0.5,Done,"출시 4종+비공개 예비 1종 / D+28~35 첫 추가 / 이후 6~8주 / 6개월 3종 상한 / Docs/10_LEVEL_BM_DESIGN_DRAFT.md"
+2026-10-22,DESIGN-CHARACTER-PERFORMANCE-ROUTES,DESIGN,"기존 4종 성능 허용선과 획득 경로 V0.1",0.75,0.75,Done,"2차 통합 240000런 / P50 Agent X 18F·Landy 22F·Alice 23F·Ninja 24F / 중복·승계 오류 0 / Landy 2500 GameMoney·Alice 광고 5회·Ninja 1200 Ruby"
+2026-10-22,OUT_OF_SCOPE-PROGRESS-VISUAL-LINKS,OUT_OF_SCOPE,"일정·진척률 보고에 시각화 링크 포함 규칙 추가",0.0,0.0,Done,"Docs/09_RELEASE_PROGRESS_TRACKER.md"

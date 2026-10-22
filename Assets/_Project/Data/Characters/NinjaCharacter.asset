@@ -34,64 +34,61 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 1f3b7b4bb89748f986ea10007d33145a, type: 3}
   animationFramesPerSecond: 6
   spriteVisualScale: {x: 1.6, y: 1.6}
-  moveSpeedColumnsPerSecond: 4
-  pivotCooldownSeconds: 0.15
+  moveSpeedColumnsPerSecond: 2.7
+  pivotCooldownSeconds: 0.2
   boosterGaugeMax: 100
-  boosterGainPerColumn: 0.3
-  boosterGainPerPivot: 0.45
+  boosterGainPerColumn: 0.24
+  boosterGainPerPivot: 0.36
   boosterBuffKey: Undefined
   maxLife: 2
   instantItemAcquireChance: 0
   itemChance: 0.2
   initiallyOwned: 0
   acquisitionOptions:
-  - acquisitionType: 0
-    enabled: 1
-    amount: 5000
   - acquisitionType: 2
-    enabled: 0
+    enabled: 1
     amount: 1200
   requiredExperienceByLevel:
-  - 100
-  - 150
-  - 225
-  - 325
-  - 450
-  - 600
-  - 800
-  - 1050
-  - 1350
-  - 1700
-  - 2100
-  - 2550
-  - 3050
+  - 250
+  - 350
+  - 400
+  - 500
+  - 700
+  - 850
+  - 1000
+  - 1300
+  - 1650
+  - 2000
+  - 2300
+  - 2600
+  - 3000
   - 3600
   - 4200
-  - 4900
-  - 5700
-  - 6600
-  - 7600
+  - 4800
+  - 5200
+  - 5800
+  - 6500
   runExperienceRewardByLevel:
-  - 5
-  - 6
-  - 7
-  - 8
-  - 9
-  - 10
-  - 11
-  - 12
-  - 13
-  - 14
-  - 15
-  - 16
-  - 17
-  - 18
-  - 19
-  - 20
-  - 21
-  - 22
-  - 23
-  - 24
+  - 180
+  - 184
+  - 188
+  - 192
+  - 196
+  - 200
+  - 204
+  - 208
+  - 212
+  - 216
+  - 220
+  - 224
+  - 228
+  - 232
+  - 236
+  - 240
+  - 244
+  - 248
+  - 252
+  - 256
   characterSkill: {fileID: 11400000, guid: a4bdc6e2f25849848711de5c2bf17510, type: 2}
   unlockableSkillId: Undefined
   unlockableSkillName: Skill Pending

@@ -6958,3 +6958,266 @@ ________________________________________
 
 작업 기준:
 • 마무리 절차 표준화는 `OUT_OF_SCOPE` 0시간으로 기록하며 출시 누적 진척률에는 반영하지 않는다.
+
+________________________________________
+
+## 2026-10-22 XP 레벨 역할 및 성장 정책 V0.2
+
+완료 내용:
+• XP 레벨을 스킬 해금과 제한적 생존 보정을 제공하는 캐릭터 숙련도로 확정했다.
+• 공통 `CharacterLevelGrowthPolicy`를 추가하고 Lv.20까지 시작 시간 +3.8초, Fever 충전 +5.7%, Time·Fever 지원 아이템 효과 +3.8%를 런타임과 시뮬레이터에 연결했다.
+• 누적 Lv.20 필요 XP 47,000은 유지하면서 Lv.5 1,500, Lv.10 7,000, Lv.15 20,500, Lv.20 47,000으로 구간을 재배치했다.
+• 런 기본 XP를 180~256으로 높이고 층 XP 1, 점수 XP 계수 0.01, 성과 XP 합계 상한 100을 적용했다.
+• 모든 현재 캐릭터 고유 스킬을 Lv.5에 해금하도록 맞췄으며 Lv.10·15·20은 후속 강화 지점으로 예약했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterLevelGrowthPolicy.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/PlayerCharacterRuntime.cs`
+• `Assets/_Project/Scripts/Runtime/Core/UI/TopHUDController.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Game/RunRewardCalculator.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Items/AddTimeItemEffect.cs`
+• `Assets/_Project/Scripts/Editor/Balance/LevelBalanceSimulation.cs`
+• `Assets/_Project/Data/Characters/*Character.asset`
+• `Assets/_Project/Data/Characters/Skills/*Skill.asset`
+• `Docs/00_MASTER_PROJECT_BRIEF.md`
+• `Docs/04_CODEX_EXECUTION_PLAN.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+
+검증 결과:
+• Unity 6.3.17f1 Roslyn 응답 파일 기준 런타임과 Editor 어셈블리 컴파일을 통과했다.
+• 전일 240,000런 성과 분포에 XP V0.2를 대입한 사전 추정 Lv.20 P50은 Agent X 172회, Alice 160회, Landy 166회, Ninja 156회다.
+• 캐릭터 4종의 Lv.20 누적 필요 XP가 모두 47,000이고 현재 스킬 해금 레벨이 모두 5인지 정적 검증했다.
+
+남은 확인:
+• Editor에서 전체 캐릭터 반복 성장을 다시 실행하고 새 통합 리포트를 내보내야 한다.
+• 실제 결과의 Lv.20 P50이 150~200런인지, 캐릭터 간 편차가 허용 범위인지 확인해야 한다.
+• 대표 Editor·APK 런에서 시작 시간과 Fever·지원 아이템 성장 효과를 대조해야 한다.
+
+다음 작업:
+• XP V0.2 전체 캐릭터 통합 성장 재시뮬레이션 및 Codex 분석을 최우선으로 수행한다.
+
+작업 기준:
+• 표준 1.0시간 중 정책·구현·컴파일·사전 추정 완료분 0.75시간을 `DESIGN` Partial로 기록하고 통합 재시뮬레이션 0.25시간을 남긴다.
+
+________________________________________
+
+## 2026-10-22 XP V0.2 통합 성장 재검증
+
+완료 내용:
+• 캐릭터 4종을 각각 300명 x 200회 실행한 새 통합 성장 리포트를 확인했다.
+• 원본 240,000행의 중복, 레벨·XP 승계와 통합 비교 수치를 재계산했다.
+• XP 성장 속도와 실제 런 성능 차이를 분리해 BM에 활용하는 방향을 분석했다.
+
+검증 결과:
+• 중복 0건, 승계 오류 0건, 통합 비교값 불일치 0건이며 JSON 4개와 SVG 5개 파싱을 통과했다.
+• Lv.20 P50은 Agent X 171회, Landy 165회, Alice 159회, Ninja 154회이며 전 캐릭터 도달률은 100%다.
+• P50 도달 층은 Agent X 18F, Landy 22F, Alice 27F, Ninja 35F다.
+• XP 기간 목표는 통과했으나 Alice와 Ninja의 성능 우위는 경쟁·보상 구조와 함께 허용 범위를 정해야 한다.
+
+변경된 주요 파일:
+• `Docs/BalanceReports/2026-10-22_180310_518_growth_comparison/codex-analysis.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/Images/google-play-progress-gauges.svg`
+• `Docs/Images/google-play-roadmap-timeline.svg`
+
+남은 이슈:
+• 캐릭터별 성능 우위 목표와 GameMoney·광고·Ruby 획득 경로를 함께 확정해야 한다.
+• 통합 리더보드를 유지할 경우 캐릭터별 보정 또는 별도 리더보드가 필요하다.
+• 대표 Editor·APK 런에서 시작 시간과 Fever·지원 아이템 성장 효과를 대조해야 한다.
+
+다음 작업:
+• 캐릭터 성능 차등 BM 허용선과 획득 경로 설계를 진행한다.
+
+작업 기준:
+• 통합 재시뮬레이션 검증 0.25시간을 추가해 `DESIGN-XP-LEVEL-ROLE` 1.0시간을 Done으로 전환한다.
+
+________________________________________
+
+## 2026-10-22 출시 캐릭터 수 및 라이브 추가 주기
+
+완료 내용:
+• 정식 론칭 공개 캐릭터는 현재 4종으로 동결하고 다섯 번째 캐릭터는 첫 업데이트용 비공개 예비 콘텐츠로 준비한다.
+• 첫 신규 캐릭터는 D+28~35에 출시하고 이후 6~8주당 1종을 기본 주기로 정했다.
+• 첫 6개월 신규 캐릭터는 최대 3종, 총 공개 캐릭터 7종을 운영 상한으로 정했다.
+• 신규 캐릭터가 없는 달에는 스킨, 미션, 밸런스 조정과 연출 상품으로 업데이트 공백을 보완한다.
+
+설계 근거:
+• 현재 4종만으로 기본·GameMoney·광고·Ruby 후보 획득 경로와 성능 차등 BM을 검증할 수 있다.
+• 주 10시간 개발 기준 신규 1종 제작·검증 예상 작업량은 18~24시간이며 운영 업무를 병행하면 6~8주 주기가 현실적이다.
+• 무료 획득 경로와 유료 가속을 병행하고, 고정 주기를 맞추기 위한 미검증 캐릭터 출시는 금지한다.
+
+변경된 주요 파일:
+• `Docs/05_WORK_LOG.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/Images/google-play-progress-gauges.svg`
+• `Docs/Images/google-play-roadmap-timeline.svg`
+
+남은 이슈:
+• 예비 다섯 번째 캐릭터의 역할·획득 경로·제작 착수 시점을 확정해야 한다.
+• 실제 캐릭터당 제작 시간을 첫 신규 캐릭터에서 계측해 6~8주 주기를 보정해야 한다.
+
+다음 작업:
+• 기존 4종 성능 차등 허용선과 GameMoney·광고·Ruby 획득 경로를 확정한다.
+
+작업 기준:
+• `DESIGN-CHARACTER-CADENCE` 0.5시간을 Done으로 기록한다.
+
+________________________________________
+
+## 2026-10-22 캐릭터 성능 허용선 및 획득 경로 V0.1
+
+완료 내용:
+• Agent X를 무료 기준 캐릭터로 두고 P50 최고 층 우위를 Landy +15~25%, Alice +20~30%, Ninja +25~35%로 정했다.
+• Alice는 이동속도 2.55, 방향전환 0.23초, Fever 충전 130, Item Chance 20%로 1차 조정했다.
+• Ninja는 이동속도 2.8, 방향전환 0.20초, Fever 충전 160으로 조정하고 MaxLife 2의 고위험·고성능 정체성을 유지했다.
+• 획득 경로를 Agent X 기본 보유, Landy 2,500 GameMoney, Alice 광고 5회, Ninja 1,200 Ruby로 확정했다.
+• Ninja의 5,000 GameMoney 경로를 제거하고 1,200 Ruby 단일 해금 옵션을 활성화했다.
+• Ruby 현금 판매는 후속으로 두되, 미션·이벤트·운영 보상으로 무료 Ruby를 축적할 수 있다는 원칙을 확정했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Data/Characters/AliceCharacter.asset`
+• `Assets/_Project/Data/Characters/NinjaCharacter.asset`
+• `Docs/00_MASTER_PROJECT_BRIEF.md`
+• `Docs/04_CODEX_EXECUTION_PLAN.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/11_UI_CHANGE_BACKLOG.md`
+• `Docs/Images/google-play-progress-gauges.svg`
+• `Docs/Images/google-play-roadmap-timeline.svg`
+
+검증 결과:
+• `CharacterAcquisitionType.Ruby`가 BackND 재화 프로필·원장·보유권 단일 트랜잭션 경로를 사용하는 것을 정적 확인했다.
+• Ninja 에셋에는 활성 Ruby 1,200 옵션만 남고 GameMoney 옵션이 제거된 것을 확인했다.
+• Alice 광고 경로는 SDK·서버 누적 진척도 연결 전까지 비활성 상태로 유지한다.
+
+남은 확인:
+• Editor에서 동일 조건으로 전체 캐릭터 반복 성장을 실행하고 새 통합 리포트를 내보내야 한다.
+• P50 최고 층이 Landy 21~23F, Alice 22~24F, Ninja 23~24F에 들어오는지 판정해야 한다.
+• Ninja Ruby 구매의 잔액 차감, 보유권 부여, 재로그인 복구와 중복 차감 방지를 실제 계정에서 검증해야 한다.
+• Ruby 무료 획득량과 Ninja 해금까지의 목표 기간은 미션 보상표에서 확정해야 한다.
+
+다음 작업:
+• 성능 V0.1 전체 캐릭터 통합 성장 재시뮬레이션과 허용선 판정을 최우선으로 수행한다.
+
+작업 기준:
+• 표준 0.75시간 중 성능·획득 정책, 데이터 적용과 문서 동기화 완료분 0.50시간을 `DESIGN` Partial로 기록하고 통합 재시뮬레이션 0.25시간을 남긴다.
+
+________________________________________
+
+## 2026-10-22 일정·진척률 보고 시각화 링크 규칙
+
+완료 내용:
+• 이후 모든 일정 및 진척률 보고에 로드맵 4.2절, 진척률 게이지와 11주 일정표 링크를 함께 제공하도록 보고 형식을 고정했다.
+• 시각화 수치가 실적 원장 및 로드맵 본문과 일치하지 않으면 보고를 완료로 처리하지 않는 기존 규칙을 유지한다.
+
+변경된 주요 파일:
+• `Docs/09_RELEASE_PROGRESS_TRACKER.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/05_WORK_LOG.md`
+
+검증 결과:
+• 세 링크 대상 파일이 저장소에 존재하고 최신 2026-10-22 실적 16.40시간을 반영하는지 확인했다.
+
+작업 기준:
+• 보고 형식 변경은 `OUT_OF_SCOPE` 0시간으로 기록하며 출시 누적 진척률에는 반영하지 않는다.
+
+________________________________________
+
+## 2026-10-22 성능 V0.1 1차 통합 성장 분석
+
+완료 내용:
+• 동일 Seed `20261020`, Standard, 캐릭터당 300명 x 200회 조건의 새 통합 성장 리포트를 분석했다.
+• 캐릭터 4종 총 240,000행에서 중복과 런 간 레벨·XP 승계를 재검증했다.
+• Agent X 18F, Landy 22F, Alice 23F, Ninja 25F의 P50 최고 층을 확인했다.
+
+검증 결과:
+• 중복 0건, 레벨·XP 승계 오류 0건, 목표 Lv.20 도달률은 전 캐릭터 100%다.
+• Lv.20 P50은 Agent X 171회, Landy 165회, Alice 164회, Ninja 164회로 150~200회 목표와 캐릭터 간 성장 격차 기준을 통과했다.
+• Landy와 Alice는 성능 허용선을 통과했다.
+• Ninja는 Agent X 대비 약 +38.9%로 목표 상한 +35%를 1층 초과했다.
+• 설정 JSON 4개와 SVG 5개의 파싱을 확인했다.
+
+보정 내용:
+• Ninja의 이동속도만 2.8에서 2.7로 낮추고 방향전환 0.20초, Fever 충전 160, Item Chance 20%, MaxLife 2는 유지했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Data/Characters/NinjaCharacter.asset`
+• `Docs/BalanceReports/2026-10-22_181848_934_growth_comparison/codex-analysis.md`
+• `Docs/00_MASTER_PROJECT_BRIEF.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+
+남은 확인:
+• Ninja 2.7이 반영된 동일 조건 2차 통합 성장 리포트를 내보내 P50 23~24F 진입을 확인해야 한다.
+
+작업 기준:
+• 최종 허용선 검증이 남아 있으므로 `DESIGN-CHARACTER-PERFORMANCE-ROUTES`는 0.50시간 Partial 상태를 유지한다.
+
+________________________________________
+
+## 2026-10-22 성능 V0.1 2차 통합 성장 검증 및 동결
+
+완료 내용:
+• Ninja 이동속도 2.7을 반영한 동일 Seed `20261020` 통합 성장 리포트를 분석했다.
+• 캐릭터 4종 총 240,000행에서 중복과 런 간 레벨·XP 승계를 독립 재계산했다.
+• P50 최고 층 Agent X 18F, Landy 22F, Alice 23F, Ninja 24F를 확인해 전 캐릭터 성능 허용선을 통과 처리했다.
+• 획득 경로 Agent X 기본, Landy 2,500 GameMoney, Alice 광고 5회, Ninja 1,200 Ruby와 현재 성능 수치를 V0.1로 동결했다.
+
+검증 결과:
+• 캐릭터별 60,000행, 총 240,000행이며 `(Sample, Run)` 중복 0건과 레벨·XP 승계 오류 0건이다.
+• Lv.20 P50은 Agent X 171회, Landy 165회, Alice 164회, Ninja 165회이며 도달률은 모두 100%다.
+• Agent X 대비 P50 최고 층 우위는 Landy +22.2%, Alice +27.8%, Ninja +33.3%로 각 허용선 안에 있다.
+• 설정 JSON 4개와 SVG 5개 파싱을 통과했다.
+
+변경된 주요 파일:
+• `Docs/BalanceReports/2026-10-22_182257_253_growth_comparison/codex-analysis.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/10_LEVEL_BM_DESIGN_DRAFT.md`
+• `Docs/Images/google-play-progress-gauges.svg`
+• `Docs/Images/google-play-roadmap-timeline.svg`
+
+남은 확인:
+• 시뮬레이션은 확률 모델이므로 대표 병목 구간의 Editor·APK 실제 플레이 대조가 필요하다.
+• Ninja Ruby 구매 왕복 검증과 Alice 광고 SDK·누적 진척도 구현은 후속 SHOP 작업으로 유지한다.
+
+다음 작업:
+• 대표 Editor·APK 런 대조 후 CharacterCoin 강화 비용 및 획득 곡선을 확정한다.
+
+작업 기준:
+• 잔여 검증 0.25시간을 획득해 `DESIGN-CHARACTER-PERFORMANCE-ROUTES` 0.75시간을 Done으로 전환한다.
+
+________________________________________
+
+## 2026-10-22 캐릭터 구매 UI 감사 및 SHOP 이관 결정
+
+확인 내용:
+• 현재 Lobby에는 독립 구매 버튼이 없고 런타임 생성 START 버튼이 미보유 캐릭터에서 UNLOCK으로 바뀌는 임시 구조다.
+• GameMoney·Ruby 구매 서비스와 BackND 원자 거래 기반은 있지만 구매 확인창, 현재·구매 후 잔액, 성공·실패·잔액 부족·오프라인 안내가 없다.
+• 구매 실패는 Unity Console 경고로만 남고 사용자 피드백이 없으며 SHOP 하단 메뉴도 아직 비활성이다.
+• Alice 광고 5회 경로는 광고 SDK, 시청 버튼과 서버 누적 진척도가 없어 실행할 수 없다.
+
+결정:
+• 캐릭터 구매 기능 UI는 SHOP 개발 일정에서 구현한다.
+• SHOP 단계는 독립 구매 버튼과 구매 안전 상태를 기능 완료 조건으로 포함한다.
+• START/UNLOCK 시각 차별화, 역할 배지와 전체 디자인 정리는 11월 30일 이후 일괄 UI 리뉴얼에서 처리한다.
+• 최소 구매 UI가 준비되기 전에는 Landy·Ninja 구매 왕복 검증을 완료로 판정하지 않는다.
+
+변경된 주요 파일:
+• `Docs/04_CODEX_EXECUTION_PLAN.md`
+• `Docs/05_WORK_LOG.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/11_UI_CHANGE_BACKLOG.md`
+
+작업 기준:
+• 이번 UI 감사와 일정 경계 확정은 기존 SHOP 범위 정리이며 별도 획득 작업량을 추가하지 않는다.

@@ -46,46 +46,46 @@ MonoBehaviour:
   initiallyOwned: 1
   acquisitionOptions: []
   requiredExperienceByLevel:
-  - 100
-  - 150
-  - 225
-  - 325
-  - 450
-  - 600
-  - 800
-  - 1050
-  - 1350
-  - 1700
-  - 2100
-  - 2550
-  - 3050
+  - 250
+  - 350
+  - 400
+  - 500
+  - 700
+  - 850
+  - 1000
+  - 1300
+  - 1650
+  - 2000
+  - 2300
+  - 2600
+  - 3000
   - 3600
   - 4200
-  - 4900
-  - 5700
-  - 6600
-  - 7600
+  - 4800
+  - 5200
+  - 5800
+  - 6500
   runExperienceRewardByLevel:
-  - 5
-  - 6
-  - 7
-  - 8
-  - 9
-  - 10
-  - 11
-  - 12
-  - 13
-  - 14
-  - 15
-  - 16
-  - 17
-  - 18
-  - 19
-  - 20
-  - 21
-  - 22
-  - 23
-  - 24
+  - 180
+  - 184
+  - 188
+  - 192
+  - 196
+  - 200
+  - 204
+  - 208
+  - 212
+  - 216
+  - 220
+  - 224
+  - 228
+  - 232
+  - 236
+  - 240
+  - 244
+  - 248
+  - 252
+  - 256
   characterSkill: {fileID: 11400000, guid: a19afdb8842243748753303a46afe104, type: 2}
   unlockableSkillId: Undefined
   unlockableSkillName: Skill Pending

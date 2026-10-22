@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   skillId: landy_clock_speed
   displayName: Clockwork Rush
-  unlockLevel: 15
+  unlockLevel: 5
   triggerType: 1
   effectType: 1
   description: On clock acquisition, P1% chance to gain P3% move speed for P2 seconds.

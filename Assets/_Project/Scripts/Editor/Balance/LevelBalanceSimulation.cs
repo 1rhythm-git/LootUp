@@ -189,7 +189,8 @@ namespace LootUp.Editor.Balance
             int currentFloor = 1;
             int highestFloor = 0;
             int life = Mathf.Max(1, character.MaxLife);
-            float remainingTime = Mathf.Max(1f, settings.InitialTimeSeconds);
+            float remainingTime = Mathf.Max(1f, settings.InitialTimeSeconds)
+                + CharacterLevelGrowthPolicy.GetStartingTimeBonusSeconds(settings.CharacterLevel);
             float feverGauge = 0f;
             float feverRemaining = 0f;
             int hits = 0;
@@ -291,9 +292,13 @@ namespace LootUp.Editor.Balance
                         ref skillSpeedRemaining);
                 }
 
-                feverGauge += Mathf.Max(0f, character.FeverGainPerColumn)
-                    * Mathf.Max(1f, settings.ColumnsPerFloor);
-                feverGauge += Mathf.Max(0f, character.FeverGainPerPivot) * 2f;
+                feverGauge += CharacterLevelGrowthPolicy.ApplyFeverGain(
+                    Mathf.Max(0f, character.FeverGainPerColumn)
+                        * Mathf.Max(1f, settings.ColumnsPerFloor),
+                    settings.CharacterLevel);
+                feverGauge += CharacterLevelGrowthPolicy.ApplyFeverGain(
+                    Mathf.Max(0f, character.FeverGainPerPivot) * 2f,
+                    settings.CharacterLevel);
                 if (feverGauge >= Mathf.Max(1f, character.FeverGaugeMax))
                 {
                     feverGauge = 0f;
@@ -325,7 +330,9 @@ namespace LootUp.Editor.Balance
                             if (duplicate)
                             {
                                 remainingTime += RisingDuplicateTimeBonus;
-                                feverGauge += RisingDuplicateFeverBonus;
+                                feverGauge += CharacterLevelGrowthPolicy.ApplySupportItemEffect(
+                                    RisingDuplicateFeverBonus,
+                                    settings.CharacterLevel);
                                 risingSpawnBonus = Mathf.Min(
                                     RisingMaximumDuplicateSpawnBonus,
                                     risingSpawnBonus + RisingDuplicateSpawnBonus);
@@ -553,11 +560,15 @@ namespace LootUp.Editor.Balance
             switch (item.ItemType)
             {
                 case ItemType.Time:
-                    remainingTime += Mathf.Max(0, item.EffectValue) * passCount;
+                    remainingTime += CharacterLevelGrowthPolicy.ApplySupportItemEffect(
+                        Mathf.Max(0, item.EffectValue) * passCount,
+                        characterLevel);
                     supportItems++;
                     break;
                 case ItemType.Fever:
-                    feverGauge += Mathf.Max(0, item.EffectValue);
+                    feverGauge += CharacterLevelGrowthPolicy.ApplySupportItemEffect(
+                        Mathf.Max(0, item.EffectValue),
+                        characterLevel);
                     supportItems++;
                     break;
                 case ItemType.Heal:

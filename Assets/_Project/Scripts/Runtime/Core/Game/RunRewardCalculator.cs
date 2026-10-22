@@ -14,10 +14,13 @@ namespace LootUp.Core.Game
         private int lifeScorePerHeart = 100;
 
         [SerializeField, Min(0f)]
-        private float scoreExperienceMultiplier = 0.025f;
+        private float scoreExperienceMultiplier = 0.01f;
 
         [SerializeField, Min(0)]
-        private int floorExperiencePerFloor = 2;
+        private int floorExperiencePerFloor = 1;
+
+        [SerializeField, Min(0)]
+        private int maximumPerformanceExperiencePerRun = 100;
 
         [SerializeField, Min(0f)]
         private float bonusGameMoneyMultiplier = 0.01f;
@@ -26,6 +29,7 @@ namespace LootUp.Core.Game
         public int LifeScorePerHeart => Mathf.Max(0, lifeScorePerHeart);
         public float ScoreExperienceMultiplier => Mathf.Max(0f, scoreExperienceMultiplier);
         public int FloorExperiencePerFloor => Mathf.Max(0, floorExperiencePerFloor);
+        public int MaximumPerformanceExperiencePerRun => Mathf.Max(0, maximumPerformanceExperiencePerRun);
         public float BonusGameMoneyMultiplier => Mathf.Max(0f, bonusGameMoneyMultiplier);
     }
 
@@ -100,8 +104,12 @@ namespace LootUp.Core.Game
             int levelExperience = characterDefinition != null
                 ? characterDefinition.GetRunExperienceRewardForLevel(characterLevel)
                 : 0;
-            int floorExperience = floorMoveCount * settings.FloorExperiencePerFloor;
-            int scoreExperience = Mathf.FloorToInt(baseTotalScore * settings.ScoreExperienceMultiplier);
+            int floorExperience = Mathf.Min(
+                floorMoveCount * settings.FloorExperiencePerFloor,
+                settings.MaximumPerformanceExperiencePerRun);
+            int scoreExperience = Mathf.Min(
+                Mathf.FloorToInt(baseTotalScore * settings.ScoreExperienceMultiplier),
+                Mathf.Max(0, settings.MaximumPerformanceExperiencePerRun - floorExperience));
             int baseTotalExperience = levelExperience + floorExperience + scoreExperience;
             int artifactBonusExperience = Mathf.FloorToInt(baseTotalExperience * artifactModifiers.ResultExperienceBonusPercent * 0.01f);
             int totalExperience = baseTotalExperience + artifactBonusExperience;

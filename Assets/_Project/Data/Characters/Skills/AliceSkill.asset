@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   skillId: alice_heart_speed
   displayName: Heartbeat Rush
-  unlockLevel: 15
+  unlockLevel: 5
   triggerType: 2
   effectType: 1
   description: On heart acquisition, P1% chance to gain P3% move speed for P2 seconds.
