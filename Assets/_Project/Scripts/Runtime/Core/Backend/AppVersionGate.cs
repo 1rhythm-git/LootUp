@@ -40,8 +40,8 @@ namespace LootUp.Core.Backend
 
     public static class AppVersionGate
     {
-        private const int ForceUpdateType = 1;
-        private const int OptionalUpdateType = 2;
+        private const int OptionalUpdateType = 1;
+        private const int ForceUpdateType = 2;
 
         public static bool IsServerAccessAllowed { get; private set; }
 
@@ -113,6 +113,10 @@ namespace LootUp.Core.Backend
                     currentVersion,
                     latestVersion,
                     string.Empty);
+                Debug.Log(
+                    $"[AppVersionGate] Current={currentVersion}, "
+                    + $"Latest={latestVersion}, Type={updateType}, "
+                    + $"Status={status}");
                 IsServerAccessAllowed = result.CanAccessServer;
                 return result;
             }

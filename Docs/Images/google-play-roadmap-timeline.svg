@@ -19,7 +19,7 @@
   </g>
 
   <rect x="300" y="162" width="100" height="522" fill="#FFF4CC"/>
-  <text x="350" y="178" text-anchor="middle" fill="#755500" font-family="Arial, sans-serif" font-size="11" font-weight="700">현재 · 16.65 h</text>
+  <text x="350" y="178" text-anchor="middle" fill="#755500" font-family="Arial, sans-serif" font-size="11" font-weight="700">현재 · 16.90 h</text>
   <g stroke="#D8DEE7" stroke-width="1">
     <line x1="300" y1="162" x2="300" y2="684"/><line x1="400" y1="162" x2="400" y2="684"/>
     <line x1="500" y1="162" x2="500" y2="684"/><line x1="600" y1="162" x2="600" y2="684"/>
@@ -75,8 +75,8 @@
 
   <g font-family="Arial, sans-serif">
     <text x="54" y="748" fill="#17202A" font-size="15" font-weight="700">다음 집중 구간</text>
-    <text x="54" y="776" fill="#5B6573" font-size="13">다음 설계</text><text x="128" y="776" fill="#17202A" font-size="13">대표 런 대조 · CharacterCoin 비용</text>
-    <text x="54" y="802" fill="#5B6573" font-size="13">완료</text><text x="128" y="802" fill="#17202A" font-size="13">4종 성능 V0.1 · 획득 경로 동결</text>
+    <text x="54" y="776" fill="#5B6573" font-size="13">최우선</text><text x="128" y="776" fill="#17202A" font-size="13">교정판 1.0.2 재빌드 · 차기 버전 차단 검증</text>
+    <text x="54" y="802" fill="#5B6573" font-size="13">완료</text><text x="128" y="802" fill="#17202A" font-size="13">1.0.1 보존 · 1.0.2 전환 · 타입 판정 교정</text>
     <text x="760" y="776" fill="#5B6573" font-size="13">10/26–27</text><text x="846" y="776" fill="#17202A" font-size="13">대표 실기기·미션·경제 보정 · 0.25 h</text>
     <text x="760" y="802" fill="#5B6573" font-size="13">10/31–11/01</text><text x="868" y="802" fill="#17202A" font-size="13">RewardBundle 승인표 및 G1 동결 · 0.10 h</text>
   </g>

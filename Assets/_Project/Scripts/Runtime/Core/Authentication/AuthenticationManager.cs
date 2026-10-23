@@ -5,6 +5,7 @@ using LootUp.Core.Currency;
 using LootUp.Core.Items;
 using LootUp.Core.Leaderboard;
 using LootUp.Core.Profile;
+using UnityEngine;
 
 namespace LootUp.Core.Authentication
 {
@@ -23,6 +24,19 @@ namespace LootUp.Core.Authentication
         public static bool IsAuthenticated =>
             State == AuthenticationState.Authenticated
             && CurrentSession != null;
+
+        [RuntimeInitializeOnLoadMethod(
+            RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            // 플레이 세션 사이에 이전 BackND 서비스 참조가 남지 않도록 초기화한다.
+            service = null;
+            isOperationInProgress = false;
+            CurrentSession = null;
+            AuthenticationStateChanged = null;
+            State = AuthenticationState.SignedOut;
+            ResetSessionServices();
+        }
 
         public static void Configure(
             IAuthenticationService authenticationService)

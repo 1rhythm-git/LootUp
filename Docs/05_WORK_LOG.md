@@ -7221,3 +7221,134 @@ ________________________________________
 
 작업 기준:
 • 이번 UI 감사와 일정 경계 확정은 기존 SHOP 범위 정리이며 별도 획득 작업량을 추가하지 않는다.
+
+________________________________________
+
+## 2026-10-23 Android 1.0.2 / code 3 전환 및 구버전 보존
+
+완료 내용:
+• 기존 Gradle release APK가 `com.lafgames.LootUp`, `versionName=1.0.1`, `versionCode=2`인 것을 확인했다.
+• 기존 APK를 `Builds/Archive/1.0.1-code2/LootUp-1.0.1-code2.apk`에 보존하고 빌드 메타데이터를 함께 보관했다.
+• 보존 APK의 SHA-256 `C42AB612227A90EF848EB97719C82DBB7256E9268355864F1C53DFBB0E61F896`을 확인했다.
+• Unity Player Settings를 `1.0.2 / code 3`으로 변경했다.
+• Title 버전 표시는 `Application.version` 연동 구조이므로 다음 빌드에서 `VER 1.0.2`를 사용한다.
+
+변경된 주요 파일:
+• `ProjectSettings/ProjectSettings.asset`
+• `Docs/05_WORK_LOG.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+• `Docs/09_RELEASE_PROGRESS_LOG.csv`
+• `Docs/Images/google-play-progress-gauges.svg`
+• `Docs/Images/google-play-roadmap-timeline.svg`
+
+검증 결과:
+• 보존 원본과 아카이브 APK의 크기 54,626,745바이트와 SHA-256이 일치한다.
+• `ProjectSettings.asset`의 `bundleVersion=1.0.2`, `AndroidBundleVersionCode=3`을 확인했다.
+
+남은 확인:
+• `1.0.2 / code 3` APK를 새로 빌드하고 Title `VER 1.0.2`와 정상 로그인을 확인한다.
+• 신버전 APK가 준비된 뒤 BackND에 `1.0.2 / Google Play / 강제`를 등록한다.
+• 보존한 `1.0.1 / code 2` APK에서 `UPDATE REQUIRED`가 표시되고 로그인·Lobby 진입이 차단되는지 확인한다.
+• 네트워크 실패 후 `RETRY` 복구 경로를 확인한다.
+
+다음 작업:
+• 새 APK 빌드 전 버전이 `1.0.2 / code 3`인지 다시 확인하고, 빌드 완료 전에는 BackND 강제 버전을 변경하지 않는다.
+
+작업 기준:
+• 구버전 보존과 버전 전환 하위 작업 0.25시간을 `STAB-VERSION-GATE-PREP` Partial로 기록하며, 기존 `STAB-VERSION-GATE-LOWER` 차단 검증은 실기기 확인 전까지 미완료로 유지한다.
+
+________________________________________
+
+## 2026-10-23 Lobby BackND 초기화 순서 오류 수정
+
+현재 증상:
+• Lobby `Awake()`의 기본 캐릭터 선택이 `SetLoadoutAsync()`를 호출하면서 `Backend is not initialized. Please call Backend.Initialize() first.` 오류가 발생했다.
+• 동일한 기본 Loadout을 Lobby 구성 과정에서 두 번 선택하며 불필요한 서버 조회를 시도하는 호출 경로를 확인했다.
+
+수정 내용:
+• 플레이 세션 시작 시 `AuthenticationManager`의 인증 세션과 연결된 서버 서비스를 로컬 기본 상태로 명시적으로 초기화한다.
+• 이미 선택·장착된 캐릭터를 다시 선택하면 Pending Queue와 서버 Loadout 요청을 생성하지 않고 성공 처리한다.
+• 실제 캐릭터 변경 시에는 기존 로컬 반영, Pending 저장과 BackND 전송 경로를 그대로 유지한다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Authentication/AuthenticationManager.cs`
+• `Assets/_Project/Scripts/Runtime/Core/Characters/CharacterProgressionManager.cs`
+• `Docs/05_WORK_LOG.md`
+
+검증 결과:
+• `git diff --check`에서 내용 오류가 없으며 기존 줄바꿈 변환 안내만 확인했다.
+• Unity 로그의 오류는 수정 전 18:14 기록이고 수정 파일은 18:16에 저장되어 아직 재컴파일·재실행 검증 전이다.
+
+남은 확인:
+• Play Mode를 종료해 Unity 재컴파일을 완료한 뒤 Title부터 진입한다.
+• Lobby 진입 시 동일 초기화 오류가 재발하지 않는지 확인한다.
+• 캐릭터 변경 후 재로그인 시 Loadout이 유지되는지 회귀 검증한다.
+
+작업 기준:
+• 런타임 검증 전이므로 별도 획득 작업량은 부여하지 않는다.
+
+________________________________________
+
+## 2026-10-23 BackND 강제 업데이트 타입 판정 오류 수정
+
+현재 증상:
+• BackND 콘솔에 `1.0.2 / Google Play / 강제`를 등록했지만 보존한 `1.0.1 / code 2` APK가 로그인과 Lobby 진입을 계속 허용했다.
+• Title의 버전 조회와 차단 UI는 실행되고 있었으나 강제 업데이트 응답을 선택 업데이트로 판정했다.
+
+원인:
+• BackND SDK `GetLatestVersion` 응답은 `type=1`이 선택 업데이트, `type=2`가 강제 업데이트다.
+• `AppVersionGate`의 두 상수가 반대로 선언되어 `type=2`를 `OptionalUpdate`로 처리하고 있었다.
+
+수정 내용:
+• 업데이트 타입 매핑을 `OptionalUpdateType=1`, `ForceUpdateType=2`로 교정했다.
+• Android 진단을 위해 `[AppVersionGate] Current=..., Latest=..., Type=..., Status=...` 로그를 추가했다.
+• Title은 기존대로 `RequiredUpdate`에서 인증과 Lobby 프리로드를 시작하지 않는 것을 코드 경로로 재확인했다.
+
+변경된 주요 파일:
+• `Assets/_Project/Scripts/Runtime/Core/Backend/AppVersionGate.cs`
+• `Docs/05_WORK_LOG.md`
+• `Docs/06_BACKND_INTEGRATION_PLAN.md`
+• `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`
+
+중요한 제한:
+• 이미 생성된 `1.0.1` APK와 교정 전 `1.0.2` APK에는 잘못된 판정 코드가 포함되어 있어 BackND 콘솔 설정만으로 해당 바이너리의 판정을 고칠 수 없다.
+• 교정 코드를 포함해 `1.0.2 / code 3`을 다시 빌드한 뒤 이를 다음 구버전 검증의 기준 APK로 보존한다.
+• 실제 강제 차단은 다음 `1.0.3 / code 4` 등록 시 교정된 `1.0.2` APK에서 검증한다.
+
+검증 결과:
+• 코드 검사에서 `type=2`가 `RequiredUpdate`, `type=1`이 `OptionalUpdate`로 연결됨을 확인했다.
+• 최신 버전은 업데이트 타입과 무관하게 `Allowed`, 알 수 없는 구버전 타입은 fail-closed로 `RequiredUpdate`를 유지한다.
+
+남은 확인:
+• Unity 재컴파일 후 컴파일 오류가 없는지 확인한다.
+• 교정된 `1.0.2 / code 3` APK를 재빌드하고 `[AppVersionGate]` 로그와 정상 로그인을 확인한다.
+• 다음 `1.0.3 / code 4` 전환 때 보존한 교정판 `1.0.2`에서 `UPDATE REQUIRED`와 Lobby 차단을 확인한다.
+
+작업 기준:
+• 실기기 강제 차단이 아직 검증되지 않았으므로 추가 획득 작업량은 부여하지 않고 `STAB-VERSION-GATE-PREP`을 Partial로 유지한다.
+
+________________________________________
+
+## 2026-10-23 작업 마감 및 재시작 최우선 지정
+
+오늘 완료:
+• Android 프로젝트 버전을 `1.0.2 / code 3`으로 전환하고 기존 `1.0.1 / code 2` APK를 해시와 함께 보존했다.
+• BackND 콘솔에 `1.0.2 / Google Play / 강제`를 등록했다.
+• Lobby의 동일 Loadout 중복 서버 요청과 플레이 세션 간 인증 서비스 잔존 방지 코드를 추가했다.
+• BackND SDK 버전 응답의 `1=선택`, `2=강제` 규격에 맞게 `AppVersionGate` 판정을 교정하고 진단 로그를 추가했다.
+
+재시작 최우선:
+1. 작업 시작 브리핑에서 기존 `1.0.1` APK는 교정 전 코드라 현재 강제 차단 검증에 사용할 수 없다는 점을 먼저 알린다.
+2. Unity 재컴파일 오류가 없는지 확인하고 Title부터 Lobby까지 진입해 BackND 초기화 오류 재발 여부를 확인한다.
+3. 교정 코드를 포함한 `1.0.2 / code 3` APK를 다시 빌드하고 `VER 1.0.2`, 정상 로그인과 `[AppVersionGate]` 로그를 확인한다.
+4. 교정판 APK를 다음 구버전 기준으로 보존한다.
+5. 실제 차단 검증은 다음 `1.0.3 / code 4` 등록 시 교정판 `1.0.2`에서 `UPDATE REQUIRED`와 Lobby 미진입을 확인한다.
+6. 버전 확인 네트워크 실패 후 `RETRY` 복구 경로를 함께 확인한다.
+
+미완료 판정:
+• 버전 게이트는 코드 수정 완료, Unity·APK 실기기 검증 미완료 상태다.
+• Lobby BackND 초기화 순서 수정도 Unity 재컴파일과 회귀 검증 전이므로 완료로 계상하지 않는다.
+• 다음 작업에서 위 항목을 다른 DESIGN·SHOP 작업보다 먼저 처리한다.
+
+Git 범위:
+• 오늘 변경한 런타임 스크립트, 버전 설정, 문서와 진척 시각화만 커밋·푸시한다.

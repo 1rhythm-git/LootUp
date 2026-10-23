@@ -25,3 +25,4 @@ Date,TaskId,Workstream,Description,EstimatedHours,EarnedHours,State,Reference
 2026-10-22,DESIGN-CHARACTER-CADENCE,DESIGN,"초기 출시 캐릭터 수와 라이브 신규 캐릭터 주기 설계",0.5,0.5,Done,"출시 4종+비공개 예비 1종 / D+28~35 첫 추가 / 이후 6~8주 / 6개월 3종 상한 / Docs/10_LEVEL_BM_DESIGN_DRAFT.md"
 2026-10-22,DESIGN-CHARACTER-PERFORMANCE-ROUTES,DESIGN,"기존 4종 성능 허용선과 획득 경로 V0.1",0.75,0.75,Done,"2차 통합 240000런 / P50 Agent X 18F·Landy 22F·Alice 23F·Ninja 24F / 중복·승계 오류 0 / Landy 2500 GameMoney·Alice 광고 5회·Ninja 1200 Ruby"
 2026-10-22,OUT_OF_SCOPE-PROGRESS-VISUAL-LINKS,OUT_OF_SCOPE,"일정·진척률 보고에 시각화 링크 포함 규칙 추가",0.0,0.0,Done,"Docs/09_RELEASE_PROGRESS_TRACKER.md"
+2026-10-23,STAB-VERSION-GATE-PREP,STAB,"Android 구버전 APK 보존 및 1.0.2 code 3 전환",0.25,0.25,Partial,"1.0.1 보존·SHA-256 확인 / 1.0.2 전환·BackND 강제 등록·응답 타입 판정 교정 / 교정판 재빌드와 차기 버전 실기기 차단 검증 재시작 최우선 / Docs/05_WORK_LOG.md"

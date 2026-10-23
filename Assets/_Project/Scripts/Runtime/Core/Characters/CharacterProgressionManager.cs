@@ -284,20 +284,42 @@ namespace LootUp.Core.Characters
             int activeVersion = configurationVersion;
             ICharacterProgressionService activeLocal =
                 localService ?? CharacterProgressionState.Service;
-            if (activeService == null)
-            {
-                return activeLocal.SetSelectedAndEquipped(characterId);
-            }
-
-            if (activeStore == null
-                || !activeStore.TrySetPendingLoadout(
-                    characterId,
-                    characterId))
+            string normalizedCharacterId =
+                CharacterIdMigration.Normalize(characterId);
+            if (string.IsNullOrWhiteSpace(normalizedCharacterId))
             {
                 return false;
             }
 
-            if (!activeLocal.SetSelectedAndEquipped(characterId))
+            // Lobby 재구성만으로 동일 Loadout을 서버에 다시 쓰지 않는다.
+            if (string.Equals(
+                    activeLocal.SelectedCharacterId,
+                    normalizedCharacterId,
+                    StringComparison.Ordinal)
+                && string.Equals(
+                    activeLocal.EquippedCharacterId,
+                    normalizedCharacterId,
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (activeService == null)
+            {
+                return activeLocal.SetSelectedAndEquipped(
+                    normalizedCharacterId);
+            }
+
+            if (activeStore == null
+                || !activeStore.TrySetPendingLoadout(
+                    normalizedCharacterId,
+                    normalizedCharacterId))
+            {
+                return false;
+            }
+
+            if (!activeLocal.SetSelectedAndEquipped(
+                normalizedCharacterId))
             {
                 activeStore.ClearPendingLoadout();
                 return false;
@@ -306,8 +328,8 @@ namespace LootUp.Core.Characters
             _ = SendLoadoutAsync(
                 activeService,
                 activeStore,
-                characterId,
-                characterId,
+                normalizedCharacterId,
+                normalizedCharacterId,
                 activeVersion);
             return true;
         }

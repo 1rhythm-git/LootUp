@@ -43,7 +43,7 @@ ________________________________________
 •	캐릭터 획득은 신규 계정 Agent X 기본 보유, Landy 2,500 GameMoney, Alice 광고 5회, Ninja 1,200 Ruby 단일 경로로 확정했다. Alice는 SDK 연결 전 비활성이고 재화형 실제 계정 왕복 검증이 남아 있다.
 •	Ninja Ruby 구매 옵션은 활성화하되 현금 Ruby 판매 상품은 영수증 서버 검증 전까지 비활성으로 유지한다.
 •	현재 Lobby의 START 버튼을 UNLOCK으로 재사용하는 구매 UI는 임시 연결이다. 독립 구매 버튼, 확인창과 상태 피드백은 SHOP 개발에서 구현하고 시각 리뉴얼은 11월 30일 이후 일괄 처리한다.
-•	Android `1.0.1`부터 Title 선행 버전 게이트를 적용하고 BackND 콘솔 강제 업데이트 등록을 완료했으며 실기기 검증이 남아 있다.
+•	Android `1.0.1`부터 Title 선행 버전 게이트를 적용했다. 현재 프로젝트와 BackND 최신 버전은 `1.0.2 / code 3`이며 SDK 업데이트 타입 역매핑을 교정했다. 교정판 재빌드와 다음 버전 상승 시 실기기 차단 검증이 남아 있다.
 •	2026년 12월 Google Play 출시 일정은 `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`를 기준으로 관리한다.
 •	기능 개발 중 UI 변경·신규 요구사항은 `Docs/11_UI_CHANGE_BACKLOG.md`에 누적하고 산발적으로 디자인을 수정하지 않는다. 11월 29일 범위 동결 후 11월 30일~12월 6일 일괄 리뉴얼 후보로 검토한다.
 •	레벨/BM은 30층 상승 후 10층 회복하는 난도 V0.2를 기준으로 하며 `Docs/08_GOOGLE_PLAY_LAUNCH_ROADMAP.md`의 10월 20일~11월 1일 세부 일정에 따라 확정한다.
@@ -509,7 +509,7 @@ BackND SDK를 서비스 경계 뒤에 연결하고 계정별 인증과 LANK를 �
 구현 상태
 •	BackND 5.18.3 SDK 초기화와 Android 패키지명 및 Google Hash 설정 완료
 •	Title에서 BackND 최신 버전을 먼저 조회하고 강제 업데이트 또는 확인 실패 시 인증·서버 데이터 초기화를 차단
-•	Google Play 업데이트 이동 및 네트워크 재시도 UI 구현, 앱 버전 `1.0.1`과 versionCode `2` 적용
+•	Google Play 업데이트 이동 및 네트워크 재시도 UI 구현, 앱 버전 `1.0.2`와 versionCode `3` 적용
 •	`IAuthenticationService`에 Custom 회원가입, 수동 로그인, 로그아웃 계약 구현
 •	`AuthenticationManager`에 `SignedOut`, `Authenticating`, `Authenticated`, `Failed` 상태와 변경 이벤트 구현
 •	Title에서 Lobby를 사전 로드하되 앱 시작마다 로그인 UI를 표시하고 자동 로그인하지 않음
